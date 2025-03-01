@@ -16,7 +16,7 @@ class AuthController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'full_name' => [
+                'name' => [
                     'required',
                     'regex:/^([\p{L}]+\s+[\p{L}]+\s+[\p{L}]+)$/u',
                     'max:255',
@@ -40,7 +40,7 @@ class AuthController extends Controller
                     'confirmed' 
                 ],
             ], [
-                "full_name.regex" => "The full name must contain at least 3 words.",
+                "name.regex" => "The full name must contain at least 3 words.",
                 "password.regex" => 'Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character.',
                 'password.confirmed' => 'Password confirmation does not match.',
                 'gender.in' => 'Gender must be either male or female.',
@@ -57,7 +57,7 @@ class AuthController extends Controller
     
            
             $user = User::create([
-                'full_name' => $request->full_name,
+                'name' => $request->name,
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'address' => $request->address,
