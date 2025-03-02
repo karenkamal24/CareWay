@@ -48,7 +48,7 @@ class CategoryResource extends Resource
             ->columns([
                 TextColumn::make('id')->sortable(),
                 ImageColumn::make('image')
-                ->getStateUsing(fn ($record) => asset('storage/' . $record->image)) // ✅ يعرض الصورة من المسار الصحيح
+                ->getStateUsing(fn ($record) => asset('storage/' . $record->image)) 
                 ->size(50)
                 ->circular(),
                 TextColumn::make('name')->label('Category Name')->sortable(),
