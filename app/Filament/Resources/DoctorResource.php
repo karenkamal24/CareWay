@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Filament\Resources;
-
+use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\DoctorResource\Pages;
 use App\Models\Doctor;
 use App\Models\AvailableDoctor;
@@ -30,70 +30,71 @@ class DoctorResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('full_name')
-                    ->label('Full Name')
+                TextInput::make('name')
+                    ->label('name')
                     ->required(),
-
+    
                 TextInput::make('email')
                     ->label('Email')
                     ->email()
                     ->unique(ignoreRecord: true)
                     ->required(),
-
+    
                 TextInput::make('password')
                     ->label('Password')
                     ->password()
                     ->required()
                     ->dehydrated(fn ($state) => filled($state))
                     ->dehydrateStateUsing(fn ($state) => bcrypt($state)),
-
+    
                 Select::make('department_id')
                     ->relationship('department', 'name')
                     ->label('Department')
                     ->required(),
-
+    
                 TextInput::make('specialization')
                     ->label('Specialization')
                     ->required(),
-
+    
                 TextInput::make('phone')
                     ->label('Phone Number')
                     ->tel()
                     ->required(),
-
+    
                 Textarea::make('description')
                     ->label('Description')
                     ->nullable(),
-
+    
                 TextInput::make('price')
                     ->label('Consultation Fee')
                     ->numeric()
                     ->required(),
-
+    
                     FileUpload::make('image')
-                    ->image()
+                    ->image()  
                     ->directory('doctor') 
-                    ->imagePreviewHeight('150') 
-                    ->columnSpanFull(),
-
+                    ->imagePreviewHeight(150) 
+                    ->columnSpanFull(), 
+                
+    
                 Toggle::make('status')
                     ->label('Active')
                     ->default(true),
-
+    
                 Repeater::make('availableAppointments')
                     ->relationship()
                     ->label('Available Appointments')
                     ->schema([
                         TextInput::make('start_time')
-                            ->label('start_time')
+                            ->label('Start Time')
                             ->type('time')
                             ->required(),
-
+    
                         TextInput::make('end_time')
-                            ->label('end_time')
+                            ->label('End Time')
                             ->type('time')
                             ->required(),
-
+    
                         Select::make('day')
                             ->label('Day')
                             ->options([
@@ -110,51 +111,50 @@ class DoctorResource extends Resource
                     ->columns(3),
             ]);
     }
-
     public static function table(Tables\Table $table): Tables\Table
-    {
-        return $table
-            ->columns([
-                ImageColumn::make('image')
+{
+    return $table
+        ->columns([
+            ImageColumn::make('image')
                 ->getStateUsing(fn ($record) => asset('storage/' . $record->image))
                 ->size(50)
                 ->circular(),
 
-                TextColumn::make('full_name')
-                    ->label('Name')
-                    ->searchable(),
+            TextColumn::make('name')
+                ->label('Name')
+                ->searchable(),
 
-                TextColumn::make('email')
-                    ->label('Email')
-                    ->searchable(),
+            TextColumn::make('email')
+                ->label('Email')
+                ->searchable(),
 
-                TextColumn::make('department.name')
-                    ->label('Department')
-                    ->sortable(),
+            TextColumn::make('department.name')
+                ->label('Department')
+                ->sortable(),
 
-                TextColumn::make('specialization')
-                    ->label('Specialization'),
+            TextColumn::make('specialization')
+                ->label('Specialization'),
 
-                TextColumn::make('price')
-                    ->label('price')
-                    ->money('USD'),
+            TextColumn::make('price')
+                ->label('Consultation Fee')
+                ->money('USD'),
 
-                TextColumn::make('status')
-                    ->label('Status')
-                    ->badge()
-                    ->color(fn (string $state): string => $state === 'active' ? 'success' : 'danger'),
-            ])
-            ->filters([
-                SelectFilter::make('department')
-                    ->relationship('department', 'name')
-                    ->label('Filter by Department'),
-            ])
-            ->actions([
-                EditAction::make(),
-                DeleteAction::make(),
-            ])
-            ->defaultSort('full_name');
-    }
+            TextColumn::make('status')
+                ->label('Status')
+                ->badge()
+                ->color(fn (string $state): string => $state === 'active' ? 'success' : 'danger'),
+        ])
+        ->filters([
+            SelectFilter::make('department')
+                ->relationship('department', 'name')
+                ->label('Filter by Department'),
+        ])
+        ->actions([
+            EditAction::make(),
+            DeleteAction::make(),
+        ])
+        ->defaultSort('name');
+}
 
     public static function getRelations(): array
     {
@@ -171,4 +171,6 @@ class DoctorResource extends Resource
             'edit' => Pages\EditDoctor::route('/{record}/edit'),
         ];
     }
+ 
+  
 }

@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('doctors', function (Blueprint $table) {
             $table->id();
             $table->foreignId('department_id')->constrained()->onDelete('cascade');
-            $table->string('full_name');
+           
+            $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
             $table->string('phone');
@@ -24,6 +25,7 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->tinyInteger('status')->default(1);
             $table->timestamps();
+         
         });
     }
     
