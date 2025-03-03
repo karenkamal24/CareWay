@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\AuthController;
 use App\Http\Controllers\User\CategoryController;
+use App\Http\Controllers\User\OrderController;
 use App\Http\Controllers\User\MedicineController;
 use App\Http\Controllers\User\CartController;
 Route::get('/user', function (Request $request) {
@@ -20,6 +21,8 @@ Route::middleware('auth:sanctum')->group(function (){
         Route::delete('/remove/{id}', [CartController::class, 'removeItem']); 
         Route::delete('/clear', [CartController::class, 'clearCart']); 
     });
+    //order
+    Route::post('/order/cash', [OrderController::class, 'storeCashOrder']);
 });
 
 
@@ -39,3 +42,6 @@ Route::prefix('medicines')->group(function () {
     Route::get('/', [MedicineController::class, 'index']); 
     Route::get('/{id}', [MedicineController::class, 'show']);
 });
+// order
+Route::get('/delivery-zones', [OrderController::class, 'getZones']);
+
