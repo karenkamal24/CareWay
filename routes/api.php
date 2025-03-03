@@ -22,7 +22,13 @@ Route::middleware('auth:sanctum')->group(function (){
         Route::delete('/clear', [CartController::class, 'clearCart']); 
     });
     //order
-    Route::post('/order/cash', [OrderController::class, 'storeCashOrder']);
+    Route::prefix('order')->group(function () {
+        Route::post('/cash', [OrderController::class, 'storeCashOrder']);
+        Route::get('/{id}', [OrderController::class, 'show']);
+        Route::get('/', [OrderController::class, 'index']);
+        Route::delete('/{id}', [OrderController::class, 'delete']);
+    });
+    
 });
 
 

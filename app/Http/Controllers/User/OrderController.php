@@ -199,13 +199,103 @@ class OrderController extends Controller
                     'total_price' => $finalPrice . ' EGP',
                     'payment_method' => 'cash',
                     'status' => 'pending',
+                    'latitude' => $order->latitude,   
+                    'longitude' => $order->longitude, 
                     'created_at' => $order->created_at,
+
                 ],
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => 'Something went wrong!', 'details' => $e->getMessage()], 500);
         }
+    }
+
+
+    public function show($id)
+    {
+        // التحقق من أن المستخدم مسجل دخوله
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'User not authenticated!'], 401);
+        }
+
+        $order = Order::with(['user', 'orderItems.medicine'])->find($id);
+    
+        if (!$order) {
+            return response()->json(['message' => 'Order not found'], 404);
+        }
+
+        $orderItems = $order->orderItems->map(function ($item) {
+            return [
+                'medicine_id' => $item->medicine_id,
+                'name' => $item->medicine->name,
+                'image' => asset('storage/products/' . $item->medicine->image), 
+            ];
+        });
+
+        return response()->json([
+            'id' => $order->id,
+            'name' => $order->name,
+            'phone' => $order->phone,
+            'address' => $order->address,
+            'total_price' => $order->total_price,
+            'payment_method' => $order->payment_method,
+            'status' => $order->status,
+            'created_at' => $order->created_at->format('Y-m-d H:i:s'),
+            'order_items' => $orderItems, 
+        ]);
+    }
+
+    public function index()
+    {
+        // التحقق من أن المستخدم مسجل دخوله
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'User not authenticated!'], 401);
+        }
+
+        $orders = Order::with(['orderItems.medicine'])->get();
+
+        $ordersData = $orders->map(function ($order) {
+            return [
+                'id' => $order->id,
+                'name' => $order->name,
+                'phone' => $order->phone,
+                'address' => $order->address,
+                'total_price' => $order->total_price,
+                'payment_method' => $order->payment_method,
+                'status' => $order->status,
+                'created_at' => $order->created_at->format('Y-m-d H:i:s'),
+                'order_items' => $order->orderItems->map(function ($item) {
+                    return [
+                        'medicine_id' => $item->medicine_id,
+                        'name' => $item->medicine->name, // عرض اسم الدواء
+                        'image' => asset('storage/products/' . $item->medicine->image), // رابط الصورة
+                    ];
+                }),
+            ];
+        });
+
+        return response()->json($ordersData);
+    }
+
+    public function delete($id)
+    {
+       
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'User not authenticated!'], 401);
+        }
+
+        $order = Order::find($id);
+
+        if (!$order) {
+            return response()->json(['message' => 'Order not found'], 404);
+        }
+
+        $order->delete();
+        return response()->json(['message' => 'Order deleted successfully'], 200);
     }
      
 }
