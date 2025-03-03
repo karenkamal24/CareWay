@@ -10,8 +10,10 @@ use Laravel\Sanctum\HasApiTokens;
 use App\Traits\SendMailTrait;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {    use SendMailTrait;
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
@@ -74,4 +76,12 @@ class User extends Authenticatable
         ]);
         return $otp;
     }
+    public function canAccessPanel(Panel $panel): bool
+{
+    if ($panel->getId() === 'admin') {
+        return $this->user_type === 'admin';
+    }
+
+    return true;
+}
 }
