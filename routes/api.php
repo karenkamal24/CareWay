@@ -7,6 +7,7 @@ use App\Http\Controllers\User\CategoryController;
 use App\Http\Controllers\User\OrderController;
 use App\Http\Controllers\User\MedicineController;
 use App\Http\Controllers\User\CartController;
+use App\Http\Controllers\User\NotificationController;
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -28,10 +29,15 @@ Route::middleware('auth:sanctum')->group(function (){
         Route::get('/', [OrderController::class, 'index']);
         Route::delete('/{id}', [OrderController::class, 'delete']);
     });
+    //notification
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']); 
+        Route::get('/unread', [NotificationController::class, 'unread']); 
+        Route::post('/mark-as-read/{id}', [NotificationController::class, 'markAsRead']);
+    });
+ 
     
 });
-
-
 //Authentication
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);

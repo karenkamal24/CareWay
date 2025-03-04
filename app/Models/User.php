@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Illuminate\Notifications\DatabaseNotification;
 
 class User extends Authenticatable implements FilamentUser
 {    use SendMailTrait;
@@ -84,4 +86,9 @@ class User extends Authenticatable implements FilamentUser
 
     return true;
 }
+public function notifications()
+{
+    return $this->morphMany(DatabaseNotification::class, 'notifiable')->latest();
+}
+
 }

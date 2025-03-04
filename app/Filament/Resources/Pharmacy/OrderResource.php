@@ -6,7 +6,9 @@ use App\Filament\Resources\Pharmacy\OrderResource\Pages;
 use App\Filament\Resources\Pharmacy\OrderResource\RelationManagers;
 use App\Models\Order;
 use Filament\Forms;
+use App\Events\OrderShippedEvent;
 use Filament\Forms\Form;
+use App\Notifications\OrderShippedNotification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Filters\SelectFilter;
@@ -16,7 +18,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\Select;
 class OrderResource extends Resource
-{protected static ?string $model = Order::class;
+{
+    protected static ?string $model = Order::class;
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
     protected static ?string $navigationLabel = 'Orders cash';
     protected static ?string $navigationGroup = 'Pharmacy Management';
@@ -46,14 +49,13 @@ class OrderResource extends Resource
             ->columns([
                 TextColumn::make('id')->label('Order ID')->sortable(),
                 TextColumn::make('name')->label('Customer Name')->searchable(),
-               TextColumn::make('phone')->label('Phone')->searchable(),
+                TextColumn::make('phone')->label('Phone')->searchable(),
                 TextColumn::make('total_price')->label('Total Price')->sortable(),
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
                     ->sortable(),
                 TextColumn::make('created_at')->label('Order Date')->dateTime(),
-               
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -71,9 +73,14 @@ class OrderResource extends Resource
                     ->form(fn (Form $form) => self::form($form))
                     ->label('Update Status')
                     ->modalHeading('Update Order Status')
-                    ->icon('heroicon-o-pencil'),
+                    ->icon('heroicon-o-pencil')
+                    ->after(function (Order $order) {
+                        if ($order->wasChanged('status') && $order->status === 'shipped') {
+                            $order->user->notify(new OrderShippedNotification($order));
+                        }
+                    }),
             ])
-            ->bulkActions([]); // Disable bulk actions
+            ->bulkActions([]);
     }
     public static function getRelations(): array
     {

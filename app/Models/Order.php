@@ -3,10 +3,12 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
+use App\Notifications\OrderShippedNotification;
 
 class Order extends Model
 {
-    use HasFactory;
+    use HasFactory,Notifiable;
 
     protected $fillable = ['user_id','name', 'phone','latitude','longitude','address', 'delivery_zone_id', 'total_price', 'payment_method', 'status'];
 
@@ -23,5 +25,15 @@ class Order extends Model
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
+    }
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::updated(function ($order) {
+            if ($order->isDirty('status') && $order->status == 'shipped') {
+                $order->user->notify(new OrderShippedNotification($order));
+            }
+        });
     }
 }
