@@ -144,7 +144,7 @@ class PaymentController extends Controller
     
             Log::info('Order created successfully', ['order_id' => $order->id]);
     
-            // إنشاء طلب في Paymob
+          
             $authToken = $this->authenticate();
             if (!$authToken) {
                 throw new \Exception("Authentication failed");
@@ -155,31 +155,43 @@ class PaymentController extends Controller
                 throw new \Exception("Failed to create Paymob order");
             }
     
-            // تحديث الطلب برقم Paymob
-            $order->update(['paymob_order_id' => $paymobOrder['id']]);
+          
+            $order->paymob_order_id = $paymobOrder['id'];
+            $order->save();
     
-            // الحصول على مفتاح الدفع
+            Log::info('Order updated with Paymob ID', ['order_id' => $order->id, 'paymob_order_id' => $paymobOrder['id']]);
+    
+          
             $paymentToken = $this->getPaymentKey($authToken, $paymobOrder['id'], $finalPrice, $billingData);
             if (!$paymentToken) {
                 throw new \Exception("Failed to generate payment token");
             }
     
-            // رابط الدفع
+            CartItem::whereHas('cart', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })->delete();
+    
+            Log::info('Cart items cleared', ['user_id' => $user->id]);
+    
+         
             $iframeId = env('PAYMOB_IFRAME_ID');
             $iframeUrl = "https://accept.paymob.com/api/acceptance/iframes/{$iframeId}?payment_token={$paymentToken}";
     
             DB::commit();
     
-            // تفريغ السلة بعد إنشاء الطلب بنجاح
-            CartItem::whereHas('cart', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })->delete();
-    
             return response()->json([
                 'message' => 'Order created successfully! Proceed to payment.',
                 'order_id' => $order->id,
                 'paymob_order_id' => $paymobOrder['id'],
-                'iframe_url' => $iframeUrl
+                'iframe_url' => $iframeUrl,
+                'total_price' => $finalPrice,
+                'delivery_fee' => $deliveryFee,
+                'payment_method' => 'card',
+                'status' => 'pending',
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'billing_data' => $billingData
+
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -187,6 +199,31 @@ class PaymentController extends Controller
             return response()->json(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()], 500);
         }
     }
+    public function handleWebhook(Request $request)
+{
+    Log::info('Paymob Webhook Received', ['data' => $request->all()]);
+    
+    $paymobOrderId = $request->input('obj.order.id');
+    $transactionStatus = $request->input('obj.success');
+
+    $order = Order::where('paymob_order_id', $paymobOrderId)->first();
+    if (!$order) {
+        Log::error('Order not found for Paymob Order ID', ['paymob_order_id' => $paymobOrderId]);
+        return response()->json(['error' => 'Order not found'], 404);
+    }
+
+    if ($transactionStatus) {
+        $order->status = 'paid';
+        Log::info('Payment successful', ['order_id' => $order->id]);
+    } else {
+        $order->status = 'failed';
+        Log::warning('Payment failed', ['order_id' => $order->id]);
+    }
+    
+    $order->save();
+    return response()->json(['message' => 'Webhook processed successfully'], 200);
+}
+
     
     
 }
