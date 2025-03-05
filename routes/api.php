@@ -29,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function (){
         Route::get('/{id}', [OrderController::class, 'show']);
         Route::get('/', [OrderController::class, 'index']);
         Route::delete('/{id}', [OrderController::class, 'delete']);
+        
     });
     //notification
     Route::prefix('notifications')->group(function () {
@@ -37,7 +38,7 @@ Route::middleware('auth:sanctum')->group(function (){
         Route::post('/mark-as-read/{id}', [NotificationController::class, 'markAsRead']);
     });
   
-
+    Route::post('/paymob/pay', [PaymentController::class, 'storeCardOrder']);
  
     
 });
@@ -60,5 +61,5 @@ Route::prefix('medicines')->group(function () {
 // order
 Route::get('/delivery-zones', [OrderController::class, 'getZones']);
 
-Route::post('/paymob/pay', [PaymentController::class, 'pay']);
+
 Route::post('/paymob/webhook', [PaymentController::class, 'handleWebhook']);

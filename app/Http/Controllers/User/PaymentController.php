@@ -1,125 +1,192 @@
 <?php
 
 namespace App\Http\Controllers\User;
-use Illuminate\Support\Facades\Http;
 
+use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-
-use App\Services\PaymobService;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use App\Models\CartItem;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
+use App\Services\DeliveryService;
 
 class PaymentController extends Controller
 {
     protected $apiUrl = 'https://accept.paymob.com/api';
 
-    // Step 1: Authenticate with Paymob
     public function authenticate()
     {
-        $response = Http::post("{$this->apiUrl}/auth/tokens", [
-            'api_key' => env('PAYMOB_API_KEY'),
-        ]);
-
-        return $response->json()['token'];
+        $apiKey = env('PAYMOB_API_KEY');
+        if (empty($apiKey)) {
+            Log::error('PAYMOB_API_KEY is missing in .env file.');
+            return null;
+        }
+    
+        $response = Http::post("{$this->apiUrl}/auth/tokens", ['api_key' => $apiKey]);
+        $data = $response->json();
+    
+        if ($response->successful()) {
+            Log::info('Paymob Authentication Response', ['response' => $data]);
+            return $data['token'] ?? null;
+        } else {
+            Log::error('Paymob Authentication Failed', ['response' => $data]);
+            return null;
+        }
     }
 
-    // Step 2: Create Order
-    public function createOrder($authToken, $amount)
+    public function createOrder($authToken, $totalPrice)
     {
         $response = Http::post("{$this->apiUrl}/ecommerce/orders", [
             'auth_token' => $authToken,
             'delivery_needed' => false,
-            'amount_cents' => $amount * 100, 
+            'amount_cents' => (int) ($totalPrice * 100),
             'currency' => 'EGP',
-            'merchant_order_id' => uniqid(),
-            'items' => []
+            'items' => [],
+            'merchant_order_id' => time(),
         ]);
 
-        return $response->json();
+        $data = $response->json();
+        Log::info('Paymob Create Order Response', ['response' => $data]);
+
+        return $data;
     }
 
-    // Step 3: Generate Payment Key
     public function getPaymentKey($authToken, $orderId, $amount, $billingData)
     {
         $response = Http::post("{$this->apiUrl}/acceptance/payment_keys", [
             'auth_token' => $authToken,
-            'amount_cents' => $amount * 100,
+            'amount_cents' => (int) ($amount * 100),
             'expiration' => 3600,
-            'order_id' => $orderId,
+            'order_id' => (int) $orderId,
             'billing_data' => $billingData,
             'currency' => 'EGP',
             'integration_id' => env('PAYMOB_INTEGRATION_ID'),
         ]);
 
-        return $response->json();
+        $data = $response->json();
+        Log::info('Paymob Payment Key Response', ['response' => $data]);
+
+        return $data['token'] ?? null;
     }
 
-    // Step 4: Handle Payment Request from Mobile App
-
-
-    // ...existing code...
-    
-    // Step 4: Handle Payment Request from Mobile App
-    public function pay(Request $request)
+    public function storeCardOrder(Request $request, DeliveryService $deliveryService)
     {
-        $request->validate([
-            'amount' => 'required|numeric|min:1',
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-            'email' => 'required|email',
-            'phone_number' => 'required|string',
-            'city' => 'required|string',
-            'country' => 'required|string',
-            'street' => 'required|string',
-            'building' => 'required|string',
-            'floor' => 'required|string',
-            'apartment' => 'required|string',
-        ]);
-    
+        DB::beginTransaction();
         try {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['error' => 'User not authenticated!'], 401);
+            }
+    
+            // استرجاع العناصر من سلة المشتريات
+            $cartItems = CartItem::whereHas('cart', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })->get();
+    
+            if ($cartItems->isEmpty()) {
+                return response()->json(['error' => 'Cart is empty!'], 400);
+            }
+    
+            // حساب المسافة وسعر التوصيل
+            $distanceKm = $deliveryService->getDistanceFromPharmacy($request->latitude, $request->longitude);
+            $deliveryFee = $deliveryService->calculateDeliveryFee($distanceKm);
+            $totalPrice = $cartItems->sum(fn($item) => $item->price * $item->quantity);
+            $finalPrice = $totalPrice + $deliveryFee;
+    
+            // إعداد بيانات الفاتورة
+            $billingData = [
+                "first_name" => $request->first_name ?? '',
+                "last_name" => $request->last_name ?? '',
+                "email" => $request->email ?? '',
+                "phone_number" => $request->phone_number ?? '',
+                "city" => $request->city ?? '',
+                "country" => $request->country ?? '',
+                "street" => $request->street ?? '',
+                "building" => $request->building ?? '',
+                "floor" => $request->floor ?? '',
+                "apartment" => $request->apartment ?? '',
+            ];
+    
+            // التحقق من البيانات قبل إنشاء الطلب
+            Log::info('Order data before creating', [
+                'user_id' => $user->id,
+                'name' => "{$billingData['first_name']} {$billingData['last_name']}",
+                'phone' => $billingData['phone_number'],
+                'address' => "{$billingData['street']}, {$billingData['building']}, {$billingData['floor']}, {$billingData['apartment']}, {$billingData['city']}, {$billingData['country']}",
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'delivery_fee' => $deliveryFee,
+                'total_price' => $finalPrice,
+                'payment_method' => 'card',
+                'status' => 'pending',
+            ]);
+    
+            // إنشاء الطلب
+            $order = Order::create([
+                'user_id' => $user->id,
+                'name' => "{$billingData['first_name']} {$billingData['last_name']}",
+                'phone' => $billingData['phone_number'],
+                'address' => "{$billingData['street']}, {$billingData['building']}, {$billingData['floor']}, {$billingData['apartment']}, {$billingData['city']}, {$billingData['country']}",
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'total_price' => $finalPrice,
+                'payment_method' => 'card',
+                'status' => 'pending',
+            ]);
+    
+            if (!$order) {
+                throw new \Exception("Order creation failed!");
+            }
+    
+            Log::info('Order created successfully', ['order_id' => $order->id]);
+    
+            // إنشاء طلب في Paymob
             $authToken = $this->authenticate();
-            $order = $this->createOrder($authToken, $request->amount);
-    
-            if (!isset($order['id'])) {
-                Log::error('Failed to create order', ['response' => $order]);
-                return response()->json(['error' => 'Failed to create order'], 500);
+            if (!$authToken) {
+                throw new \Exception("Authentication failed");
             }
     
-            // Billing details
-            $billingData = $request->only([
-                'first_name', 'last_name', 'email', 'phone_number',
-                'city', 'country', 'street', 'building', 'floor', 'apartment'
-            ]);
-    
-            $paymentKey = $this->getPaymentKey($authToken, $order['id'], $request->amount, $billingData);
-    
-            if (!isset($paymentKey['token'])) {
-                Log::error('Failed to generate payment key', ['response' => $paymentKey]);
-                return response()->json(['error' => 'Failed to generate payment key'], 500);
+            $paymobOrder = $this->createOrder($authToken, $finalPrice);
+            if (!isset($paymobOrder['id'])) {
+                throw new \Exception("Failed to create Paymob order");
             }
     
-            // Return response to mobile app
+            // تحديث الطلب برقم Paymob
+            $order->update(['paymob_order_id' => $paymobOrder['id']]);
+    
+            // الحصول على مفتاح الدفع
+            $paymentToken = $this->getPaymentKey($authToken, $paymobOrder['id'], $finalPrice, $billingData);
+            if (!$paymentToken) {
+                throw new \Exception("Failed to generate payment token");
+            }
+    
+            // رابط الدفع
+            $iframeId = env('PAYMOB_IFRAME_ID');
+            $iframeUrl = "https://accept.paymob.com/api/acceptance/iframes/{$iframeId}?payment_token={$paymentToken}";
+    
+            DB::commit();
+    
+            // تفريغ السلة بعد إنشاء الطلب بنجاح
+            CartItem::whereHas('cart', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })->delete();
+    
             return response()->json([
-                'iframe_url' => "https://accept.paymob.com/api/acceptance/iframes/" . env('PAYMOB_IFRAME_ID') . "?payment_token=" . $paymentKey['token']
-            ]);
+                'message' => 'Order created successfully! Proceed to payment.',
+                'order_id' => $order->id,
+                'paymob_order_id' => $paymobOrder['id'],
+                'iframe_url' => $iframeUrl
+            ], 200);
         } catch (\Exception $e) {
-            Log::error('Payment processing error', ['exception' => $e]);
-            return response()->json(['error' => 'Internal Server Error'], 500);
+            DB::rollBack();
+            Log::error('Payment Error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()], 500);
         }
     }
     
-    // ...existing code...
-    // Step 5: Handle Webhook Response from Paymob
-    public function handleWebhook(Request $request)
-    {
-        $data = $request->all();
-
-        if (isset($data['success']) && $data['success']) {
-            // Payment successful, update your database
-            return response()->json(['message' => 'Payment successful']);
-        }
-
-        return response()->json(['message' => 'Payment failed'], 400);
-    }
+    
 }

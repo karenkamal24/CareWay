@@ -122,5 +122,7 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+    'paymob_api_key' => env('PAYMOB_API_KEY', 'Not Found'),
+
 
 ];

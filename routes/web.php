@@ -8,3 +8,6 @@ Route::get('/', function () {
 });
 
 
+Route::get('/test-env', function () {
+    return env('PAYMOB_API_KEY', 'Not Found');
+});
