@@ -10,7 +10,8 @@ use App\Traits\SendMailTrait;
 class Order extends Model
 {  use SendMailTrait;
     use HasFactory,Notifiable;
-    protected $fillable = ['user_id', 'name', 'phone', 'latitude', 'longitude', 'address', 'delivery_zone_id', 'total_price', 'payment_method', 'paymob_order_id', 'status', 'delivery_fee'];
+   
+    protected $fillable = ['user_id', 'name', 'phone', 'latitude', 'longitude', 'address', 'delivery_zone_id', 'total_price', 'payment_method', 'paymob_order_id', 'status', 'payment_state' ,];
 
 
     public function user()
