@@ -8,6 +8,7 @@ use App\Http\Controllers\User\OrderController;
 use App\Http\Controllers\User\MedicineController;
 use App\Http\Controllers\User\CartController;
 use App\Http\Controllers\User\NotificationController;
+use App\Http\Controllers\User\PaymentController;
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -35,6 +36,8 @@ Route::middleware('auth:sanctum')->group(function (){
         Route::get('/unread', [NotificationController::class, 'unread']); 
         Route::post('/mark-as-read/{id}', [NotificationController::class, 'markAsRead']);
     });
+  
+
  
     
 });
@@ -57,3 +60,5 @@ Route::prefix('medicines')->group(function () {
 // order
 Route::get('/delivery-zones', [OrderController::class, 'getZones']);
 
+Route::post('/paymob/pay', [PaymentController::class, 'pay']);
+Route::post('/paymob/webhook', [PaymentController::class, 'handleWebhook']);
