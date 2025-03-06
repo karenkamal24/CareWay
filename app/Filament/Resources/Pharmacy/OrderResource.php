@@ -49,17 +49,19 @@ class OrderResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->query(Order::where('payment_method', 'cash'))
+            
             ->columns([
                 TextColumn::make('id')->label('Order ID')->sortable(),
                 TextColumn::make('name')->label('Customer Name')->searchable(),
                 TextColumn::make('phone')->label('Phone')->searchable(),
                 TextColumn::make('total_price')->label('Total Price')->sortable(),
+                TextColumn::make('payment_method')->label('Payment Method')->sortable(),
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
                     ->sortable(),
                 TextColumn::make('created_at')->label('Order Date')->dateTime(),
+
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -71,6 +73,16 @@ class OrderResource extends Resource
                         'delivered' => 'Delivered',
                         'canceled' => 'Canceled',
                     ]),
+                    SelectFilter::make('payment_method')
+                    ->label('Filter by payment_method')
+                    ->options([
+                        'cash' => 'cash',
+                        'card' => 'card',
+                      
+                    ]),
+
+
+
             ])
             ->actions([
                 EditAction::make()

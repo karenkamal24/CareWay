@@ -120,7 +120,7 @@ class PaymentController extends Controller
                 'total_price' => $finalPrice,
                 'payment_method' => 'card',
                 'status' => 'pending',
-                'payment_state' => 'initiated', // ✅ تم إضافة `payment_state`
+                'payment_state' => 'initiated', // تم إضافة payment_state
             ]);
     
             // Paymob API Integration
@@ -136,6 +136,16 @@ class PaymentController extends Controller
             $paymentToken = $this->getPaymentKey($authToken, $paymobOrder['id'], $finalPrice, $billingData);
             if (!$paymentToken) throw new \Exception("Failed to generate payment token");
     
+            // تقليل الكمية لكل منتج في السلة
+            foreach ($cartItems as $cartItem) {
+                $medicine = Product::find($cartItem->medicine_id);
+                if ($medicine) {
+                    $medicine->quantity -= $cartItem->quantity;
+                    $medicine->save();
+                }
+            }
+    
+            // حذف العناصر من السلة
             CartItem::whereHas('cart', fn($query) => $query->where('user_id', $user->id))->delete();
     
             $iframeId = env('PAYMOB_IFRAME_ID');
@@ -152,14 +162,15 @@ class PaymentController extends Controller
                 'delivery_fee' => $deliveryFee,
                 'payment_method' => 'card',
                 'status' => 'pending',
-                'payment_state' => 'initiated', // ✅ تم تضمين `payment_state`
+                'payment_state' => 'initiated', // تم تضمين payment_state
                 'billing_data' => $billingData
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Payment Error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json(['error' => $e->getMessage()], 500);
-        }}
+        }
+    }
     public function handleWebhook(Request $request)
     {
         Log::info('Paymob Webhook Received', ['data' => $request->all()]);
