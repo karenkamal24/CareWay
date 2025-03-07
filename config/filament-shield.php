@@ -56,6 +56,9 @@ return [
         'widgets' => true,
         'resources' => true,
         'custom_permissions' => false,
+        'Role' => true,
+        'User' => true,
+        'Permission' => true,
     ],
 
     'generator' => [

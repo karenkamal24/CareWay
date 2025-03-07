@@ -27,6 +27,7 @@ class DoctorResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-user';
     protected static ?string $navigationGroup = 'Hospital Management';
 
+    
     public static function form(Forms\Form $form): Forms\Form
     {
         return $form
