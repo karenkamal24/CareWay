@@ -17,28 +17,16 @@ class WidgetPolicy
      */
     public function viewOrdersStatsOverview(User $user)
     {
-        return $user->can('widget_OrdersStatsOverview');
+        return $user->hasPermissionTo('widget_OrdersStatsOverview');
     }
 
-    /**
-     * Determine whether the user can view the chart.
-     *
-     * @param  \App\Models\User  $user
-     * @return \Illuminate\Auth\Access\Response|bool
-     */
-    public function viewChart(User $user)
+    public function view(User $user)
     {
-        return $user->can('widget_chart');
+        return $user->hasPermissionTo('view_chart');
     }
 
-    /**
-     * Determine whether the user can view the order stats.
-     *
-     * @param  \App\Models\User  $user
-     * @return \Illuminate\Auth\Access\Response|bool
-     */
     public function viewOrderstuts(User $user)
     {
-        return $user->can('widget_orderstuts');
+        return $user->hasPermissionTo('widget_orderstuts');
     }
 }

@@ -15,7 +15,7 @@ class DeliveryZonePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_pharmacy::delivery::zone');
+        return $user->can('delivery_zone_view_any');
     }
 
     /**
@@ -23,7 +23,7 @@ class DeliveryZonePolicy
      */
     public function view(User $user, DeliveryZone $deliveryZone): bool
     {
-        return $user->can('view_pharmacy::delivery::zone');
+        return $user->can('delivery_zone_view');
     }
 
     /**
@@ -31,7 +31,7 @@ class DeliveryZonePolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_pharmacy::delivery::zone');
+        return $user->can('delivery_zone_create');
     }
 
     /**
@@ -39,7 +39,7 @@ class DeliveryZonePolicy
      */
     public function update(User $user, DeliveryZone $deliveryZone): bool
     {
-        return $user->can('update_pharmacy::delivery::zone');
+        return $user->can('delivery_zone_update');
     }
 
     /**
@@ -47,7 +47,7 @@ class DeliveryZonePolicy
      */
     public function delete(User $user, DeliveryZone $deliveryZone): bool
     {
-        return $user->can('delete_pharmacy::delivery::zone');
+        return $user->can('delivery_zone_delete');
     }
 
     /**
@@ -55,7 +55,7 @@ class DeliveryZonePolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_pharmacy::delivery::zone');
+        return $user->can('delivery_zone_delete_any');
     }
 
     /**
@@ -63,7 +63,7 @@ class DeliveryZonePolicy
      */
     public function forceDelete(User $user, DeliveryZone $deliveryZone): bool
     {
-        return $user->can('force_delete_pharmacy::delivery::zone');
+        return $user->can('delivery_zone_restore');
     }
 
     /**
@@ -71,7 +71,7 @@ class DeliveryZonePolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_pharmacy::delivery::zone');
+        return $user->can('delivery_zone_force_delete');
     }
 
     /**
@@ -79,7 +79,7 @@ class DeliveryZonePolicy
      */
     public function restore(User $user, DeliveryZone $deliveryZone): bool
     {
-        return $user->can('restore_pharmacy::delivery::zone');
+        return $user->can('delivery_zone_restore');
     }
 
     /**
@@ -87,7 +87,7 @@ class DeliveryZonePolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_pharmacy::delivery::zone');
+        return $user->can('delivery_zone_restore_any');
     }
 
     /**
@@ -95,7 +95,7 @@ class DeliveryZonePolicy
      */
     public function replicate(User $user, DeliveryZone $deliveryZone): bool
     {
-        return $user->can('replicate_pharmacy::delivery::zone');
+        return $user->can('delivery_zone_replicate');
     }
 
     /**
@@ -103,6 +103,6 @@ class DeliveryZonePolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_pharmacy::delivery::zone');
+        return $user->can('delivery_zone_reorder');
     }
 }

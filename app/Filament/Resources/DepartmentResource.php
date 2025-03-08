@@ -15,7 +15,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\BooleanColumn;
 
-class DepartmentResource extends Resource
+class DepartmentResource extends Resource 
 {
     protected static ?string $model = Department::class;
 
@@ -87,4 +87,5 @@ class DepartmentResource extends Resource
             'edit' => Pages\EditDepartment::route('/{record}/edit'),
         ];
     }
+   
 }

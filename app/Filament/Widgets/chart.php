@@ -1,13 +1,14 @@
 <?php
 
 namespace App\Filament\Widgets;
+
 use App\Models\Order;
 use Filament\Widgets\ChartWidget;
 use Flowframe\Trend\Trend;
 use Flowframe\Trend\TrendValue;
 use Illuminate\Support\Carbon;
 
-class chart extends ChartWidget
+class Chart extends ChartWidget
 {
     protected static ?string $heading = 'Orders Per Year';
 
@@ -25,15 +26,12 @@ class chart extends ChartWidget
 
     protected function getData(): array
     {
-       
         $selectedYear = $this->filter ?? now()->year;
 
-        
         if (!is_numeric($selectedYear)) {
             $selectedYear = now()->year;
         }
 
-      
         $months = [
             '01' => 'Jan', '02' => 'Feb', '03' => 'Mar', '04' => 'Apr',
             '05' => 'May', '06' => 'Jun', '07' => 'Jul', '08' => 'Aug',
@@ -51,7 +49,6 @@ class chart extends ChartWidget
                 Carbon::parse($value->date)->format('m') => $value->aggregate
             ]);
 
-     
         $orderCounts = [];
         foreach ($months as $key => $month) {
             $orderCounts[] = $orders[$key] ?? 0; 
@@ -67,7 +64,7 @@ class chart extends ChartWidget
                     'borderWidth' => 2,
                 ],
             ],
-            'labels' => array_values($months), // 🔹 عرض كل الأشهر دائمًا
+            'labels' => array_values($months),
         ];
     }
 
@@ -75,4 +72,8 @@ class chart extends ChartWidget
     {
         return 'bar'; 
     }
+
+
+    
+  
 }

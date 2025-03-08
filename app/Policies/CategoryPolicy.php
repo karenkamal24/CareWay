@@ -15,7 +15,7 @@ class CategoryPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_pharmacy::category');
+        return $user->can('category_view_any');
     }
 
     /**
@@ -23,7 +23,7 @@ class CategoryPolicy
      */
     public function view(User $user, Category $category): bool
     {
-        return $user->can('view_pharmacy::category');
+        return $user->can('category_view');
     }
 
     /**
@@ -31,7 +31,7 @@ class CategoryPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_pharmacy::category');
+        return $user->can('category_create');
     }
 
     /**
@@ -39,7 +39,7 @@ class CategoryPolicy
      */
     public function update(User $user, Category $category): bool
     {
-        return $user->can('update_pharmacy::category');
+        return $user->can('category_update');
     }
 
     /**
@@ -47,7 +47,7 @@ class CategoryPolicy
      */
     public function delete(User $user, Category $category): bool
     {
-        return $user->can('delete_pharmacy::category');
+        return $user->can('category_delete');
     }
 
     /**
@@ -55,7 +55,7 @@ class CategoryPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_pharmacy::category');
+        return $user->can('category_delete_any');
     }
 
     /**
@@ -63,7 +63,7 @@ class CategoryPolicy
      */
     public function forceDelete(User $user, Category $category): bool
     {
-        return $user->can('force_delete_pharmacy::category');
+        return $user->can('category_force_delete');
     }
 
     /**
@@ -71,7 +71,7 @@ class CategoryPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_pharmacy::category');
+        return $user->can('category_force_delete_any');
     }
 
     /**
@@ -79,7 +79,7 @@ class CategoryPolicy
      */
     public function restore(User $user, Category $category): bool
     {
-        return $user->can('restore_pharmacy::category');
+        return $user->can('category_restore');
     }
 
     /**
@@ -87,7 +87,7 @@ class CategoryPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_pharmacy::category');
+        return $user->can('category_restore_any');
     }
 
     /**
@@ -95,7 +95,7 @@ class CategoryPolicy
      */
     public function replicate(User $user, Category $category): bool
     {
-        return $user->can('replicate_pharmacy::category');
+        return $user->can('category_replicate');
     }
 
     /**
@@ -103,6 +103,6 @@ class CategoryPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_pharmacy::category');
+        return $user->can('category_reorder');
     }
 }

@@ -5,64 +5,57 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\RoleResource\Pages;
 use Filament\Forms;
 use Filament\Tables;
-use Filament\Resources\Resource;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\CheckboxList;
-use Filament\Forms\Components\Section;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Actions\DeleteAction;
+use Filament\Resources\Resource;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use App\Models\User;
 
 class RoleResource extends Resource
 {
-    protected static ?string $model = \Spatie\Permission\Models\Role::class;
+    protected static ?string $model = Role::class;
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
     protected static ?string $navigationLabel = 'Roles & Permissions';
 
     public static function form(Forms\Form $form): Forms\Form
     {
         return $form
-            ->schema(
-                array_merge(
-                    [
-                        TextInput::make('name')
-                            ->label('Role Name')
-                            ->required()
-                            ->unique(ignoreRecord: true)
-                            ->columnSpan(2),
-    
-                        Select::make('users')
-                            ->label('Assign Users')
-                            ->multiple()
-                            ->options(User::pluck('email', 'id')->toArray())
-                            ->required()
-                            ->columnSpan(2),
-                    ],
-                    Permission::all()
-                    ->groupBy('group')
-                    ->map(function ($permissions, $group) {
-                        return Section::make($group ?: 'Other Permissions')
-                            ->description("$group")
-                            ->schema([
-                                CheckboxList::make("permissions")
-                                    ->options($permissions->pluck('name', 'id')->toArray())
-                                    ->columns(2)
-                                    ->saveRelationshipsUsing(function ($record, $state) {
-                                        // مزامنة الأذونات مع السجل
-                                        $record->permissions()->sync($state);
-                                    })
-                            ]);
+            ->schema([
+                TextInput::make('name')
+                    ->label('Role Name')
+                    ->required()
+                    ->unique(ignoreRecord: true)
+                    ->columnSpan(2),
+
+                Select::make('users')
+                    ->label('Assign Users')
+                    ->multiple()
+                    ->options(User::pluck('email', 'id'))
+                    ->required()
+                    ->columnSpan(2),
+
+                CheckboxList::make('permissions')
+                    ->label('Permissions')
+                    ->options(function () {
+                        return Permission::all()
+                            ->groupBy('group') // تجميع الأذونات حسب المجموعة
+                            ->mapWithKeys(function ($permissions, $group) {
+                                return [
+                                    ucfirst($group) => $permissions->pluck('name', 'id')->toArray()
+                                ];
+                            })
+                            ->toArray();
                     })
-                    ->values()
-                    ->toArray()
-                
-                )
-            )
-            ->columns(2);
+                    ->columns(2)
+                    ->helperText('حدد الأذونات المناسبة لهذا الدور.')
+                    ->saveRelationshipsUsing(fn($record, $state) => $record->permissions()->sync($state))
+                    ->columnSpan(2), // ✅ تم إصلاح الخطأ هنا بإضافة الفاصلة المنقوطة
+            ]);
     }
-    
 
     public static function table(Tables\Table $table): Tables\Table
     {
