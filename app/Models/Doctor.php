@@ -36,4 +36,8 @@ class Doctor  extends User
     {
         return true;
     }
+    public function testResults()
+    {
+        return $this->hasMany(TestResult::class, 'doctor_id');
+    }
 }

@@ -93,4 +93,9 @@ public function notifications()
     return $this->morphMany(DatabaseNotification::class, 'notifiable')->latest();
 }
 
+public function testResults()
+{
+    return $this->hasMany(TestResult::class, 'doctor_id');
+}
+
 }
