@@ -14,6 +14,10 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Actions\Action;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Filament\Forms\Components\KeyValue;
+use Illuminate\Support\Facades\Storage;
 
 class TestResultResource extends Resource
 {
@@ -31,18 +35,26 @@ class TestResultResource extends Resource
                     ->label('Patient'),
 
                 TextInput::make('test_name')->required()->maxLength(255),
-                TextInput::make('result')->required(),
-                TextInput::make('unit')->required(),
-                TextInput::make('range')->nullable(),
-                TextInput::make('note')->nullable(),
+                TextInput::make('result')->required()->maxLength(255),
+                TextInput::make('unit')->maxLength(50),
+                TextInput::make('range')->maxLength(50),
+                TextInput::make('age'),
+
+                KeyValue::make('variables')
+                    ->keyLabel('Variable Name')
+                    ->valueLabel('Value')
+                    ->addButtonLabel('Add New Variable')
+                    ->nullable(),
+
+                DatePicker::make('test_date')->required(),
+                DatePicker::make('result_date')->required(),
 
                 Select::make('doctor_id')
                     ->relationship('doctor', 'name')
                     ->nullable()
                     ->label('Doctor'),
 
-                DatePicker::make('test_date')->required(),
-                DatePicker::make('result_date')->required(),
+                TextInput::make('note')->nullable(),
             ]);
     }
 
@@ -52,20 +64,20 @@ class TestResultResource extends Resource
             ->columns([
                 TextColumn::make('patient.name')->label('Patient')->searchable(),
                 TextColumn::make('test_name')->searchable(),
-                TextColumn::make('result')->searchable(),
-                TextColumn::make('unit')->searchable(),
-                TextColumn::make('range')->searchable(),
-                TextColumn::make('note')->searchable(),
-
-                TextColumn::make('test_date')
-                    ->label('Test Date')
-                    ->date(),
-
-                TextColumn::make('result_date')
-                    ->label('Result Date')
-                    ->date(),
-
-                TextColumn::make('doctor.full_name')->label('Doctor')->searchable(),
+                TextColumn::make('result')->label('Result'),
+                TextColumn::make('unit')->label('Unit'),
+                TextColumn::make('range')->label('Range'),
+                TextColumn::make('test_date')->label('Test Date')->date(),
+                TextColumn::make('result_date')->label('Result Date')->date(),
+                TextColumn::make('doctor.name')->label('Doctor')->searchable(),
+                TextColumn::make('age'),
+            ])
+            ->actions([
+                Action::make('downloadPDF')
+                    ->label('Download PDF')
+                    ->url(fn ($record) => static::generatePDF($record), true) // ✅ يفتح الرابط مباشرة
+                    ->openUrlInNewTab() // ✅ يفتح الرابط في نافذة جديدة
+                    ->color('success'),
             ])
             ->filters([
                 Filter::make('patient_name')
@@ -75,7 +87,7 @@ class TestResultResource extends Resource
                     ->query(fn ($query, array $data) =>
                         isset($data['name']) && $data['name'] !== ''
                             ? $query->whereHas('patient', fn ($q) =>
-                                $q->where('full_name', 'like', '%' . $data['name'] . '%')
+                                $q->where('name', 'like', '%' . $data['name'] . '%')
                             )
                             : $query
                     )
@@ -88,12 +100,28 @@ class TestResultResource extends Resource
                     ->query(fn ($query, array $data) =>
                         isset($data['name']) && $data['name'] !== ''
                             ? $query->whereHas('doctor', fn ($q) =>
-                                $q->where('full_name', 'like', '%' . $data['name'] . '%')
+                                $q->where('name', 'like', '%' . $data['name'] . '%')
                             )
                             : $query
                     )
                     ->indicateUsing(fn ($data) => isset($data['name']) && $data['name'] !== '' ? 'Filtering by Doctor Name' : null),
             ]);
+    }
+
+    public static function generatePDF($record)
+    {
+       
+        $pdf = Pdf::loadView('pdf.lab_report', ['record' => $record]);
+
+       
+        $fileName = "Lab_Report_{$record->id}.pdf";
+        $filePath = "pdf_reports/{$fileName}";
+
+    
+        Storage::disk('public')->put($filePath, $pdf->output());
+
+       
+        return asset("storage/{$filePath}");
     }
 
     public static function getRelations(): array

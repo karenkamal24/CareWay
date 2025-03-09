@@ -9,6 +9,7 @@ use App\Http\Controllers\User\MedicineController;
 use App\Http\Controllers\User\CartController;
 use App\Http\Controllers\User\NotificationController;
 use App\Http\Controllers\User\PaymentController;
+use App\Http\Controllers\User\TestResultController;
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -39,6 +40,9 @@ Route::middleware('auth:sanctum')->group(function (){
     });
   
     Route::post('/paymob/pay', [PaymentController::class, 'storeCardOrder']);
+
+    //test lab
+    Route::get('/test-results', [TestResultController::class, 'index']);
  
     
 });

@@ -15,13 +15,15 @@ return new class extends Migration
             $table->id();
             $table->foreignId('patient_id')->constrained('users')->onDelete('cascade');
             $table->string('test_name');
-            $table->string('result');
-            $table->string('unit');
+            $table->string('result')->nullable();
+            $table->string('unit')->nullable();
             $table->string('range')->nullable();
+            $table->string('age')->nullable();
             $table->date('test_date');
             $table->date('result_date');
-            $table->text('note')->nullable();
             $table->foreignId('doctor_id')->nullable()->constrained('doctors')->onDelete('set null');
+            $table->text('note')->nullable();
+            $table->json('variables')->nullable();
             $table->timestamps();
         });
     }

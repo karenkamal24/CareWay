@@ -11,9 +11,12 @@ class TestResult extends Model
     use HasFactory;
 
     protected $fillable = [
-        'patient_id', 'test_name', 'result', 'unit', 'range', 'test_date', 'result_date', 'doctor_id',  'note'
+        'patient_id', 'test_name', 'result', 'unit', 'range', 'test_date', 'result_date', 'doctor_id',  'note' ,'variables','age'
     ];
 
+    protected $casts = [
+        'variables' => 'array',
+    ];
    
     public function patient()
     {
