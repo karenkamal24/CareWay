@@ -1,94 +1,32 @@
 <?php
 
-namespace App\Filament\Resources;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-use App\Filament\Resources\RoleResource\Pages;
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\CheckboxList;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Actions\DeleteAction;
-use Filament\Resources\Resource;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
-use App\Models\User;
-
-class RoleResource extends Resource
+class AddGroupToPermissionsTable extends Migration
 {
-    protected static ?string $model = Role::class;
-    protected static ?string $navigationIcon = 'heroicon-o-shield-check';
-    protected static ?string $navigationLabel = 'Roles & Permissions';
-
-    public static function form(Forms\Form $form): Forms\Form
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
     {
-        return $form
-            ->schema([
-                TextInput::make('name')
-                    ->label('Role Name')
-                    ->required()
-                    ->unique(ignoreRecord: true)
-                    ->columnSpan(2),
-
-                Select::make('users')
-                    ->label('Assign Users')
-                    ->multiple()
-                    ->options(User::pluck('email', 'id'))
-                    ->required()
-                    ->columnSpan(2),
-
-                CheckboxList::make('permissions')
-                    ->label('Permissions')
-                    ->options(function () {
-                        return Permission::all()
-                            ->groupBy('group') // تجميع الأذونات حسب المجموعة
-                            ->mapWithKeys(function ($permissions, $group) {
-                                return [
-                                    ucfirst($group) => $permissions->pluck('name', 'id')->toArray()
-                                ];
-                            })
-                            ->toArray();
-                    })
-                    ->columns(2)
-                    ->helperText('حدد الأذونات المناسبة لهذا الدور.')
-                    ->saveRelationshipsUsing(fn($record, $state) => $record->permissions()->sync($state))
-                    ->columnSpan(2), // ✅ تم إصلاح الخطأ هنا بإضافة الفاصلة المنقوطة
-            ]);
+        Schema::table('permissions', function (Blueprint $table) {
+            $table->string('group')->nullable();
+        });
     }
 
-    public static function table(Tables\Table $table): Tables\Table
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
     {
-        return $table
-            ->columns([
-                TextColumn::make('name')->label('Role Name'),
-                TextColumn::make('users.email')
-                    ->label('Users')
-                    ->badge()
-                    ->limit(3),
-                TextColumn::make('permissions.name')
-                    ->label('Permissions')
-                    ->badge()
-                    ->limit(3),
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                DeleteAction::make()
-                    ->before(fn($record) => $record->users()->detach() && $record->permissions()->detach()),
-            ]);
-    }
-
-    public static function getRelations(): array
-    {
-        return [];
-    }
-
-    public static function getPages(): array
-    {
-        return [
-            'index' => Pages\ListRoles::route('/'),
-            'create' => Pages\CreateRole::route('/create'),
-            'edit' => Pages\EditRole::route('/{record}/edit'),
-        ];
+        Schema::table('permissions', function (Blueprint $table) {
+            $table->dropColumn('group');
+        });
     }
 }
