@@ -7,9 +7,17 @@ use Filament\Widgets\ChartWidget;
 use Flowframe\Trend\Trend;
 use Flowframe\Trend\TrendValue;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+
+
 
 class Chart extends ChartWidget
 {
+    public static function canView(): bool
+    {
+        return Auth::check() && Gate::allows('viewOrdersStatsOverview', \App\Dashboard::class);
+    }
     protected static ?string $heading = 'Orders Per Year';
 
     protected static ?int $height = 250; 

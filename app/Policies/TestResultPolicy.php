@@ -3,10 +3,10 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\Order;
+use App\Models\TestResult;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class OrderPolicy
+class TestResultPolicy
 {
     use HandlesAuthorization;
 
@@ -15,15 +15,15 @@ class OrderPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_pharmacy::order');
+        return $user->can('view_any_lab::test::result');
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Order $order): bool
+    public function view(User $user, TestResult $testResult): bool
     {
-        return $user->can('view_pharmacy::order');
+        return $user->can('view_lab::test::result');
     }
 
     /**
@@ -31,23 +31,23 @@ class OrderPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_pharmacy::order');
+        return $user->can('create_lab::test::result');
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Order $order): bool
+    public function update(User $user, TestResult $testResult): bool
     {
-        return $user->can('update_pharmacy::order');
+        return $user->can('update_lab::test::result');
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Order $order): bool
+    public function delete(User $user, TestResult $testResult): bool
     {
-        return $user->can('delete_pharmacy::order');
+        return $user->can('delete_lab::test::result');
     }
 
     /**
@@ -55,15 +55,15 @@ class OrderPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_pharmacy::order');
+        return $user->can('delete_any_lab::test::result');
     }
 
     /**
      * Determine whether the user can permanently delete.
      */
-    public function forceDelete(User $user, Order $order): bool
+    public function forceDelete(User $user, TestResult $testResult): bool
     {
-        return $user->can('force_delete_pharmacy::order');
+        return $user->can('force_delete_lab::test::result');
     }
 
     /**
@@ -71,15 +71,15 @@ class OrderPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_pharmacy::order');
+        return $user->can('force_delete_any_lab::test::result');
     }
 
     /**
      * Determine whether the user can restore.
      */
-    public function restore(User $user, Order $order): bool
+    public function restore(User $user, TestResult $testResult): bool
     {
-        return $user->can('restore_pharmacy::order');
+        return $user->can('restore_lab::test::result');
     }
 
     /**
@@ -87,15 +87,15 @@ class OrderPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_pharmacy::order');
+        return $user->can('restore_any_lab::test::result');
     }
 
     /**
      * Determine whether the user can replicate.
      */
-    public function replicate(User $user, Order $order): bool
+    public function replicate(User $user, TestResult $testResult): bool
     {
-        return $user->can('replicate_pharmacy::order');
+        return $user->can('replicate_lab::test::result');
     }
 
     /**
@@ -103,6 +103,6 @@ class OrderPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_pharmacy::order');
+        return $user->can('reorder_lab::test::result');
     }
 }

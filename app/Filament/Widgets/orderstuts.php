@@ -4,9 +4,14 @@ namespace App\Filament\Widgets;
 
 use App\Models\Order;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class orderstuts extends ChartWidget
-{
+{   public static function canView(): bool
+    {
+        return Auth::check() && Gate::allows('viewOrdersStatsOverview', \App\Dashboard::class);
+    }
     protected static ?string $heading = 'Orders by Status';
     protected static ?int $height = 150;
 

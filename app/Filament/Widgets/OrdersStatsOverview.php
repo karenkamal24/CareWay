@@ -6,8 +6,14 @@ use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 class OrdersStatsOverview extends BaseWidget
 {
+    public static function canView(): bool
+    {
+        return Auth::check() && Gate::allows('viewOrdersStatsOverview', \App\Dashboard::class);
+    }
     protected function getCards(): array
     {
         return [
