@@ -21,6 +21,8 @@ use Filament\Tables\Actions\Action;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
 use Filament\Forms\Components\Repeater;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\TestResultNotification;
 
 class TestResultResource extends Resource
 {
@@ -63,39 +65,39 @@ class TestResultResource extends Resource
 
             Section::make('Test Details')->schema([
                 Repeater::make('tests')
-                ->label('Tests')
-                ->schema([
-                    TextInput::make('test')->label('Test Name')->required(),
-                    Repeater::make('results')
-                        ->label('Results')
-                        ->schema([
-                            TextInput::make('result')->label('Result')->required(),
-                            TextInput::make('unit')->label('Unit')->required(),
-                        ])
-                        ->addable()
-                        ->reorderable()
-                        ->deletable()
-                        ->columns(2)
-                        ->default([]),
-            
-                    Repeater::make('ranges') // هذا داخل `tests`
-                        ->label('Ranges')
-                        ->schema([
-                            TextInput::make('test')->label('Test Name')->required(),
-                            TextInput::make('description')->label('Description')->nullable(),
-                        ])
-                        ->addable()
-                        ->reorderable()
-                        ->deletable()
-                        ->columns(2)
-                        ->default([]),
-                ])
-                ->addable()
-                ->reorderable()
-                ->deletable()
-                ->columns(1)
-                ->default([]),
-            ]),            
+                    ->label('Tests')
+                    ->schema([
+                        TextInput::make('test')->label('Test Name')->required(),
+                        Repeater::make('results')
+                            ->label('Results')
+                            ->schema([
+                                TextInput::make('result')->label('Result')->required(),
+                                TextInput::make('unit')->label('Unit')->required(),
+                            ])
+                            ->addable()
+                            ->reorderable()
+                            ->deletable()
+                            ->columns(2)
+                            ->default([]),
+
+                        Repeater::make('ranges')
+                            ->label('Ranges')
+                            ->schema([
+                                TextInput::make('test')->label('Test Name')->required(),
+                                TextInput::make('description')->label('Description')->nullable(),
+                            ])
+                            ->addable()
+                            ->reorderable()
+                            ->deletable()
+                            ->columns(2)
+                            ->default([]),
+                    ])
+                    ->addable()
+                    ->reorderable()
+                    ->deletable()
+                    ->columns(1)
+                    ->default([]),
+            ]),
 
             TextInput::make('note')->required()->label('Comment'),
             TextInput::make('total_cost')->numeric()->nullable()->label('Total Cost'),
@@ -121,7 +123,6 @@ class TestResultResource extends Resource
                 ->required(),
         ]);
     }
-
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table
@@ -138,12 +139,6 @@ class TestResultResource extends Resource
                 TextColumn::make('status')->label('Payment Status')->badge(),
                 TextColumn::make('test_status')->label('Test Status')->badge(),
             ])
-            ->actions([
-                Action::make('downloadPDF')
-                    ->label('Download PDF')
-                    ->action(fn ($record) => static::generatePDF($record))
-                    ->color('success'),
-            ])
             ->filters([
                 Filter::make('patient_name')
                     ->form([
@@ -156,7 +151,7 @@ class TestResultResource extends Resource
                             )
                             : $query
                     ),
-
+    
                 Filter::make('doctor_name')
                     ->form([
                         TextInput::make('name')->label('Doctor Name'),
@@ -168,9 +163,28 @@ class TestResultResource extends Resource
                             )
                             : $query
                     ),
+            ])
+            ->actions([
+                Action::make('downloadPDF')
+                    ->label('Download PDF')
+                    ->action(fn ($record) => static::generatePDF($record))
+                    ->color('success'),
+    
+                Action::make('sendNotification')
+                    ->label('Send Notification')
+                    ->action(fn ($record) => static::sendNotification($record))
+                    ->color('primary')
+                    ->visible(fn ($record) => $record->status === 'paid' && $record->test_status === 'completed'),
             ]);
     }
-
+    
+    public static function sendNotification($record)
+    {
+        if ($record->status === 'paid' && $record->test_status === 'completed') {
+            Notification::send($record->patient, new TestResultNotification($record));
+        }
+    }
+    
     public static function generatePDF($record)
     {
         $mpdf = new Mpdf([
@@ -184,7 +198,7 @@ class TestResultResource extends Resource
         $fileName = "Report_{$record->id}.pdf";
 
         return response()->streamDownload(
-            fn() => print($mpdf->Output('', 'S')), 
+            fn() => print($mpdf->Output('', 'S')),
             $fileName
         );
     }
