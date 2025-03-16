@@ -10,14 +10,17 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Mpdf\Mpdf;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Actions\Action;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Filament\Forms\Components\KeyValue;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
+use Filament\Forms\Components\Repeater;
 
 class TestResultResource extends Resource
 {
@@ -27,35 +30,96 @@ class TestResultResource extends Resource
 
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                Select::make('patient_id')
-                    ->relationship('patient', 'name')
-                    ->required()
-                    ->label('Patient'),
+        return $form->schema([
+            Select::make('patient_id')
+                ->relationship('patient', 'name')
+                ->required()
+                ->label('Patient')
+                ->reactive()
+                ->afterStateUpdated(function ($state, callable $set) {
+                    $patient = \App\Models\User::find($state);
+                    $set('patient_name', $patient?->name);
+                    $set('patient_email', $patient?->email);
+                }),
 
-                TextInput::make('test_name')->required()->maxLength(255),
-                TextInput::make('result')->required()->maxLength(255),
-                TextInput::make('unit')->maxLength(50),
-                TextInput::make('range')->maxLength(50),
-                TextInput::make('age'),
+            Select::make('doctor_id')
+                ->relationship('doctor', 'name')
+                ->nullable()
+                ->label('Doctor')
+                ->reactive()
+                ->afterStateUpdated(function ($state, callable $set) {
+                    $doctor = \App\Models\Doctor::find($state);
+                    $set('doctor_name', $doctor?->name);
+                    $set('doctor_email', $doctor?->email);
+                }),
 
-                KeyValue::make('variables')
-                    ->keyLabel('Variable Name')
-                    ->valueLabel('Value')
-                    ->addButtonLabel('Add New Variable')
-                    ->nullable(),
+            TextInput::make('patient_name')->required()->label('Patient Name'),
+            TextInput::make('doctor_name')->required()->label('Doctor Name'),
+            TextInput::make('patient_email')->email()->nullable()->label('Patient Email'),
+            TextInput::make('age')->numeric()->nullable()->label('Age'),
+            TextInput::make('doctor_email')->email()->nullable()->label('Doctor Email'),
+            DatePicker::make('test_date')->required(),
+            DatePicker::make('result_date')->required(),
 
-                DatePicker::make('test_date')->required(),
-                DatePicker::make('result_date')->required(),
+            Section::make('Test Details')->schema([
+                Repeater::make('tests')
+                ->label('Tests')
+                ->schema([
+                    TextInput::make('test')->label('Test Name')->required(),
+                    Repeater::make('results')
+                        ->label('Results')
+                        ->schema([
+                            TextInput::make('result')->label('Result')->required(),
+                            TextInput::make('unit')->label('Unit')->required(),
+                        ])
+                        ->addable()
+                        ->reorderable()
+                        ->deletable()
+                        ->columns(2)
+                        ->default([]),
+            
+                    Repeater::make('ranges') // هذا داخل `tests`
+                        ->label('Ranges')
+                        ->schema([
+                            TextInput::make('test')->label('Test Name')->required(),
+                            TextInput::make('description')->label('Description')->nullable(),
+                        ])
+                        ->addable()
+                        ->reorderable()
+                        ->deletable()
+                        ->columns(2)
+                        ->default([]),
+                ])
+                ->addable()
+                ->reorderable()
+                ->deletable()
+                ->columns(1)
+                ->default([]),
+            ]),            
 
-                Select::make('doctor_id')
-                    ->relationship('doctor', 'name')
-                    ->nullable()
-                    ->label('Doctor'),
+            TextInput::make('note')->required()->label('Comment'),
+            TextInput::make('total_cost')->numeric()->nullable()->label('Total Cost'),
+            TextInput::make('amount_paid')->numeric()->default(0)->label('Amount Paid'),
 
-                TextInput::make('note')->nullable(),
-            ]);
+            Select::make('status')
+                ->options([
+                    'unpaid' => 'Unpaid',
+                    'partial' => 'Partial',
+                    'paid' => 'Paid',
+                ])
+                ->default('unpaid')
+                ->label('Payment Status'),
+
+            Select::make('test_status')
+                ->label('Test Status')
+                ->options([
+                    'pending' => 'Pending',
+                    'completed' => 'Completed',
+                    'cancelled' => 'Cancelled',
+                ])
+                ->default('pending')
+                ->required(),
+        ]);
     }
 
     public static function table(Tables\Table $table): Tables\Table
@@ -63,20 +127,21 @@ class TestResultResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('patient.name')->label('Patient')->searchable(),
-                TextColumn::make('test_name')->searchable(),
-                TextColumn::make('result')->label('Result'),
-                TextColumn::make('unit')->label('Unit'),
-                TextColumn::make('range')->label('Range'),
+                TextColumn::make('patient_email')->label('Patient Email')->searchable(),
+                TextColumn::make('doctor.name')->label('Doctor')->searchable(),
+                TextColumn::make('doctor_email')->label('Doctor Email')->searchable(),
+                TextColumn::make('age')->label('Age'),
                 TextColumn::make('test_date')->label('Test Date')->date(),
                 TextColumn::make('result_date')->label('Result Date')->date(),
-                TextColumn::make('doctor.name')->label('Doctor')->searchable(),
-                TextColumn::make('age'),
+                TextColumn::make('total_cost')->label('Total Cost')->money('USD'),
+                TextColumn::make('amount_paid')->label('Amount Paid')->money('USD'),
+                TextColumn::make('status')->label('Payment Status')->badge(),
+                TextColumn::make('test_status')->label('Test Status')->badge(),
             ])
             ->actions([
                 Action::make('downloadPDF')
                     ->label('Download PDF')
-                    ->url(fn ($record) => static::generatePDF($record), true) // ✅ يفتح الرابط مباشرة
-                    ->openUrlInNewTab() // ✅ يفتح الرابط في نافذة جديدة
+                    ->action(fn ($record) => static::generatePDF($record))
                     ->color('success'),
             ])
             ->filters([
@@ -90,8 +155,7 @@ class TestResultResource extends Resource
                                 $q->where('name', 'like', '%' . $data['name'] . '%')
                             )
                             : $query
-                    )
-                    ->indicateUsing(fn ($data) => isset($data['name']) && $data['name'] !== '' ? 'Filtering by Patient Name' : null),
+                    ),
 
                 Filter::make('doctor_name')
                     ->form([
@@ -100,28 +164,29 @@ class TestResultResource extends Resource
                     ->query(fn ($query, array $data) =>
                         isset($data['name']) && $data['name'] !== ''
                             ? $query->whereHas('doctor', fn ($q) =>
-                                $q->where('name', 'like', '%' . $data['name'] . '%')
+                                $q->where('full_name', 'like', '%' . $data['name'] . '%')
                             )
                             : $query
-                    )
-                    ->indicateUsing(fn ($data) => isset($data['name']) && $data['name'] !== '' ? 'Filtering by Doctor Name' : null),
+                    ),
             ]);
     }
 
     public static function generatePDF($record)
     {
-       
-        $pdf = Pdf::loadView('pdf.lab_report', ['record' => $record]);
+        $mpdf = new Mpdf([
+            'default_font' => 'dejavusans',
+            'mode' => 'utf-8'
+        ]);
 
-       
-        $fileName = "Lab_Report_{$record->id}.pdf";
-        $filePath = "pdf_reports/{$fileName}";
+        $html = view('pdf.lab_report', compact('record'))->render();
+        $mpdf->WriteHTML($html);
 
-    
-        Storage::disk('public')->put($filePath, $pdf->output());
+        $fileName = "Report_{$record->id}.pdf";
 
-       
-        return asset("storage/{$filePath}");
+        return response()->streamDownload(
+            fn() => print($mpdf->Output('', 'S')), 
+            $fileName
+        );
     }
 
     public static function getRelations(): array

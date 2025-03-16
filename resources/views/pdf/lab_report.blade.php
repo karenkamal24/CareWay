@@ -2,181 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laboratory Report</title>
+    <title>Lab Report</title>
     <style>
-        :root {
-            --primary-color: #1a73e8;
-            --secondary-color: #f8f9fa;
-            --border-color: #e0e0e0;
-            --text-dark: #202124;
-            --text-light: #5f6368;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            color: var(--text-dark);
-            background-color: #f5f5f5;
-            line-height: 1.6;
-        }
-        
-        .report-container {
-            max-width: 800px;
-            margin: 20px auto;
-            background: white;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        
-        .header {
-            background: var(--primary-color);
-            color: white;
-            padding: 25px;
-            text-align: center;
-        }
-        
-        .header h2 {
-            margin: 0;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-            font-size: 28px;
-        }
-        
-        .patient-info {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            padding: 20px;
-            background-color: var(--secondary-color);
-        }
-        
-        .patient-info p {
-            width: 48%;
-            margin: 8px 0;
-            font-size: 15px;
-        }
-        
-        .table-container {
-            padding: 20px;
-        }
-
-        .note-container {
-            padding: 20px;
-            background-color: #fff3cd;
-            border-left: 5px solid #ff9800;
-            margin: 15px;
-            font-size: 15px;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-        }
-        
-        th {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 14px;
-            text-align: left;
-            font-weight: 500;
-        }
-        
-        td {
-            padding: 14px;
-            border-top: 1px solid var(--border-color);
-        }
-        
-        tr:nth-child(even) {
-            background-color: #fafafa;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            background-color: var(--secondary-color);
-            color: var(--text-light);
-            font-size: 14px;
-        }
+        body { font-family: 'DejaVu Sans', sans-serif; padding: 20px; }
+        h1 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        table, th, td { border: 1px solid black; }
+        th, td { padding: 10px; text-align: left; }
     </style>
 </head>
 <body>
-    <div class="report-container">
-        <!-- Header -->
-        <div class="header">
-            <h2>Laboratory Report</h2>
-        </div>
 
-        <!-- Patient Info -->
-        <div class="patient-info">
-            <p><strong>Patient Name:</strong> {{ $record->patient->name }}</p>
-            <p><strong>Test Date:</strong> {{ $record->test_date }}</p>
-            <p><strong>Result Date:</strong> {{ $record->result_date }}</p>
-            <p><strong>Doctor:</strong> {{ $record->doctor->name ?? 'N/A' }}</p>
-        </div>
+    <h1>Lab Report</h1>
 
-        <!-- Test Results Table -->
-        <div class="table-container">
-            <h3>Test Results</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Test</th>
-                        <th>Result</th>
-                        <th>Unit</th>
-                        <th>Reference Range</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>{{ $record->test_name }}</td>
-                        <td>{{ $record->result }}</td>
-                        <td>{{ $record->unit }}</td>
-                        <td>{{ $record->range }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+    <p><strong>Patient Name:</strong> {{ $record->patient->name ?? 'N/A' }}</p>
+    <p><strong>Test Name:</strong> {{ $record->test_name }}</p>
+    <p><strong>Result:</strong> {{ $record->result }}</p>
+    <p><strong>Unit:</strong> {{ $record->unit ?? '-' }}</p>
+    <p><strong>Range:</strong> {{ $record->range ?? '-' }}</p>
+    <p><strong>Test Date:</strong> {{ $record->test_date }}</p>
+    <p><strong>Result Date:</strong> {{ $record->result_date }}</p>
+    <p><strong>Doctor:</strong> {{ $record->doctor->name ?? 'N/A' }}</p>
 
-        <!-- Additional Results Table -->
-        @if (!empty($record->variables))
-        <div class="table-container">
-            <h3>Additional Results</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Parameter</th>
-                        <th>Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($record->variables as $key => $value)
-                        <tr>
-                            <td>{{ $key }}</td>
-                            <td>{{ $value }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-        @endif
+    <h3>Notes</h3>
+    <p>{{ $record->note ?? 'No additional notes' }}</p>
 
-        <!-- Note Section -->
-        @if (!empty($record->note))
-        <div class="note-container">
-            <strong>Note:</strong> {{ $record->note }}
-        </div>
-        @endif
-
-        <!-- Footer -->
-        <div class="footer">
-            <p>This report is generated by Hospital Management System</p>
-            <p>For inquiries, please contact the laboratory department</p>
-        </div>
-    </div>
 </body>
 </html>
