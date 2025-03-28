@@ -6,6 +6,8 @@ use App\Filament\Resources\DoctorResource\Pages;
 use App\Models\Doctor;
 use App\Models\AvailableDoctor;
 use Filament\Forms;
+use App\Models\User;
+
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Forms\Components\Repeater;
@@ -32,22 +34,34 @@ class DoctorResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('name')
-                    ->label('name')
-                    ->required(),
+                Select::make('roles')
+                    ->label('Roles')
+                    ->multiple()
+                    ->relationship('roles', 'name')
+                    ->preload()
+                    ->searchable(),
     
-                TextInput::make('email')
-                    ->label('Email')
-                    ->email()
-                    ->unique(ignoreRecord: true)
+                    Select::make('user_id')
+                    ->label('User Email')
+                    ->relationship('user', 'email')
+                    ->searchable()
+                    ->preload()
                     ->required(),
-    
+                
                 TextInput::make('password')
                     ->label('Password')
                     ->password()
-                    ->required()
-                    ->dehydrated(fn ($state) => filled($state))
-                    ->dehydrateStateUsing(fn ($state) => bcrypt($state)),
+                    ->required(),
+            // جلب نوع المستخدم مباشرة من جدول users
+            TextInput::make('user_type')
+            ->label('User Type')
+            ->disabled()
+            ->dehydrated(false), // لا يرسل هذا الحقل عند حفظ النموذج
+        
+                
+                TextInput::make('name')
+                    ->label('Name')
+                    ->required(),
     
                 Select::make('department_id')
                     ->relationship('department', 'name')
@@ -72,91 +86,67 @@ class DoctorResource extends Resource
                     ->numeric()
                     ->required(),
     
-                    FileUpload::make('image')
+                FileUpload::make('image')
                     ->image()  
                     ->directory('doctor') 
                     ->imagePreviewHeight(150) 
                     ->columnSpanFull(), 
-                
     
                 Toggle::make('status')
                     ->label('Active')
                     ->default(true),
-    
-                Repeater::make('availableAppointments')
-                    ->relationship()
-                    ->label('Available Appointments')
-                    ->schema([
-                        TextInput::make('start_time')
-                            ->label('Start Time')
-                            ->type('time')
-                            ->required(),
-    
-                        TextInput::make('end_time')
-                            ->label('End Time')
-                            ->type('time')
-                            ->required(),
-    
-                        Select::make('day')
-                            ->label('Day')
-                            ->options([
-                                'Sunday' => 'Sunday',
-                                'Monday' => 'Monday',
-                                'Tuesday' => 'Tuesday',
-                                'Wednesday' => 'Wednesday',
-                                'Thursday' => 'Thursday',
-                                'Friday' => 'Friday',
-                                'Saturday' => 'Saturday',
-                            ])
-                            ->required(),
-                    ])
-                    ->columns(3),
             ]);
     }
+    
     public static function table(Tables\Table $table): Tables\Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('user.email')
+                    ->label('Email')
+                    ->searchable(),
+    
+                TextColumn::make('user.user_type')
+                    ->label('User Type')
+                    ->sortable(),
+    
+                TextColumn::make('name')
+                    ->label('Name')
+                    ->searchable(),
+    
+                TextColumn::make('department.name')
+                    ->label('Department')
+                    ->sortable(),
+    
+                TextColumn::make('specialization')
+                    ->label('Specialization'),
+    
+                TextColumn::make('price')
+                    ->label('Consultation Fee')
+                    ->money('USD'),
+    
+                TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn (string $state): string => $state === 'active' ? 'success' : 'danger'),
+            ])
+            ->filters([
+                SelectFilter::make('department')
+                    ->relationship('department', 'name')
+                    ->label('Filter by Department'),
+            ])
+            ->actions([
+                EditAction::make(),
+                DeleteAction::make(),
+            ])
+            ->defaultSort('name');
+    }
+    
+public static function query(Builder $query): Builder
 {
-    return $table
-        ->columns([
-            ImageColumn::make('image')
-                ->getStateUsing(fn ($record) => asset('storage/' . $record->image))
-                ->size(50)
-                ->circular(),
-
-            TextColumn::make('name')
-                ->label('Name')
-                ->searchable(),
-
-            TextColumn::make('email')
-                ->label('Email')
-                ->searchable(),
-
-            TextColumn::make('department.name')
-                ->label('Department')
-                ->sortable(),
-
-            TextColumn::make('specialization')
-                ->label('Specialization'),
-
-            TextColumn::make('price')
-                ->label('Consultation Fee')
-                ->money('USD'),
-
-            TextColumn::make('status')
-                ->label('Status')
-                ->badge()
-                ->color(fn (string $state): string => $state === 'active' ? 'success' : 'danger'),
-        ])
-        ->filters([
-            SelectFilter::make('department')
-                ->relationship('department', 'name')
-                ->label('Filter by Department'),
-        ])
-        ->actions([
-            EditAction::make(),
-            DeleteAction::make(),
-        ])
-        ->defaultSort('name');
+    return $query->with('roles');
 }
+
 
     public static function getRelations(): array
     {
@@ -174,5 +164,19 @@ class DoctorResource extends Resource
         ];
     }
  
-  
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $user = User::create([
+            'email' => $data['email'],
+            'password' => bcrypt($data['password']),
+            'user_type' => $data['user_type'] ?? 'customer', 
+        ]);
+    
+        $data['user_id'] = $user->id; 
+        unset($data['password'], $data['user_type']); 
+    
+        return $data;
+    }
+    
+    
 }

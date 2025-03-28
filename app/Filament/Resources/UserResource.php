@@ -53,14 +53,12 @@ class UserResource extends Resource implements HasShieldPermissions
                  'admin' => 'admin',
                   'customer' => 'user',
                     ])
-                ->default('customer') // تعيين القيمة الافتراضية
                 ->required(),
 
 
-            // اختيار الأدوار
             Forms\Components\Select::make('roles')
                 ->label('Roles')
-                ->options(Role::query()->pluck('name', 'name')) // استخدام name بدلاً من id
+                ->options(Role::query()->pluck('name', 'name')) 
                 ->multiple()
                 ->preload()
                 ->afterStateUpdated(function ($state, $set, $record) {
@@ -69,7 +67,7 @@ class UserResource extends Resource implements HasShieldPermissions
                     }
                 }),
 
-            // اختيار الصلاحيات
+         
             Forms\Components\Select::make('permissions')
                 ->label('Permissions')
                 ->options(Permission::query()->pluck('name', 'name')) // استخدام name بدلاً من id
