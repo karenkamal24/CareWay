@@ -118,6 +118,11 @@ class DoctorResource extends Resource
                     ->label('Email')
                     ->searchable(),
 
+                    ImageColumn::make('image')
+                    ->getStateUsing(fn ($record) => asset('storage/' . $record->image)) 
+                    ->size(50)
+                    ->circular(),
+                    
                 TextColumn::make('name')
                     ->label('Name')
                     ->searchable(),
@@ -132,6 +137,8 @@ class DoctorResource extends Resource
                 TextColumn::make('price')
                     ->label('Consultation Fee')
                     ->money('USD'),
+
+             
 
                 TextColumn::make('status')
                     ->label('Status')
@@ -174,19 +181,6 @@ public static function query(Builder $query): Builder
         ];
     }
  
-    protected function mutateFormDataBeforeCreate(array $data): array
-    {
-        $user = User::create([
-            'email' => $data['email'],
-            'password' => bcrypt($data['password']),
-            'user_type' => $data['user_type'] ?? 'customer', 
-        ]);
-    
-        $data['user_id'] = $user->id; 
-        unset($data['password'], $data['user_type']); 
-    
-        return $data;
-    }
-    
+
     
 }

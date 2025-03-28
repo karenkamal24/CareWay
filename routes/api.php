@@ -10,6 +10,8 @@ use App\Http\Controllers\User\CartController;
 use App\Http\Controllers\User\NotificationController;
 use App\Http\Controllers\User\PaymentController;
 use App\Http\Controllers\User\TestResultController;
+use App\Http\Controllers\User\DoctorController;
+use App\Http\Controllers\User\DepartmentController;
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -40,12 +42,26 @@ Route::middleware('auth:sanctum')->group(function (){
     });
   
     Route::post('/paymob/pay', [PaymentController::class, 'storeCardOrder']);
-
     //test lab
     Route::get('/test-results', [TestResultController::class, 'index']);
- 
+    //Doctor
+    Route::prefix('doctors')->group(function () {
+    Route::get('/', [DoctorController::class, 'index']);
+    Route::get('/{id}', [DoctorController::class, 'show']);
+    });
+    //Department
+    Route::prefix('departments')->group(function () {
+        Route::get('/', [DepartmentController::class, 'index']);
+        Route::get('/{id}', [DepartmentController::class, 'show']);
+    });
     
 });
+
+
+
+
+
+
 //Authentication
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -62,8 +78,4 @@ Route::prefix('medicines')->group(function () {
     Route::get('/', [MedicineController::class, 'index']); 
     Route::get('/{id}', [MedicineController::class, 'show']);
 });
-// order
-Route::get('/delivery-zones', [OrderController::class, 'getZones']);
-
-
 Route::post('/paymob/webhook', [PaymentController::class, 'handleWebhook']);
