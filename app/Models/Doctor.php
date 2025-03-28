@@ -13,9 +13,9 @@ class Doctor extends Authenticatable implements FilamentUser
 {
     use HasFactory, Notifiable, HasRoles;
 
-    protected $fillable = ['department_id', 'user_id', 'name', 'email', 'password', 'phone', 'description', 'specialization', 'price', 'image', 'status'];
+    protected $fillable = ['department_id', 'user_id', 'name',  'phone', 'description', 'specialization', 'price', 'image', 'status'];
 
-    protected $hidden = ['password'];
+   
     protected $with = ['roles'];
 
 
@@ -29,7 +29,7 @@ class Doctor extends Authenticatable implements FilamentUser
 
     public function availableAppointments()
     {
-        return $this->hasMany(Available_doctor::class);
+        return $this->hasMany(AvailableDoctor::class);
     }
 
     public function user()

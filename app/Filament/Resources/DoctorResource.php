@@ -34,70 +34,82 @@ class DoctorResource extends Resource
     {
         return $form
             ->schema([
-                Select::make('roles')
-                    ->label('Roles')
-                    ->multiple()
-                    ->relationship('roles', 'name')
-                    ->preload()
-                    ->searchable(),
-    
-                    Select::make('user_id')
+                Select::make('user_id')
                     ->label('User Email')
                     ->relationship('user', 'email')
                     ->searchable()
                     ->preload()
                     ->required(),
-                
-                TextInput::make('password')
-                    ->label('Password')
-                    ->password()
-                    ->required(),
-            // جلب نوع المستخدم مباشرة من جدول users
-            TextInput::make('user_type')
-            ->label('User Type')
-            ->disabled()
-            ->dehydrated(false), // لا يرسل هذا الحقل عند حفظ النموذج
-        
-                
+
                 TextInput::make('name')
                     ->label('Name')
                     ->required(),
-    
+
                 Select::make('department_id')
                     ->relationship('department', 'name')
                     ->label('Department')
                     ->required(),
-    
+
                 TextInput::make('specialization')
                     ->label('Specialization')
                     ->required(),
-    
+
                 TextInput::make('phone')
                     ->label('Phone Number')
                     ->tel()
                     ->required(),
-    
+
                 Textarea::make('description')
                     ->label('Description')
                     ->nullable(),
-    
+
                 TextInput::make('price')
                     ->label('Consultation Fee')
                     ->numeric()
                     ->required(),
-    
+
                 FileUpload::make('image')
-                    ->image()  
-                    ->directory('doctor') 
-                    ->imagePreviewHeight(150) 
-                    ->columnSpanFull(), 
-    
+                    ->image()
+                    ->directory('doctor')
+                    ->imagePreviewHeight(150)
+                    ->columnSpanFull(),
+
                 Toggle::make('status')
                     ->label('Active')
                     ->default(true),
+
+                Repeater::make('AvailableDoctor')
+                    ->label('Available Schedule')
+                    ->relationship('availableAppointments')
+                    ->schema([
+                        Select::make('day')
+                            ->label('Day')
+                            ->options([
+                                'Sunday' => 'Sunday',
+                                'Monday' => 'Monday',
+                                'Tuesday' => 'Tuesday',
+                                'Wednesday' => 'Wednesday',
+                                'Thursday' => 'Thursday',
+                                'Friday' => 'Friday',
+                                'Saturday' => 'Saturday',
+                            ])
+                            ->required(),
+
+                        TextInput::make('start_time')
+                            ->label('Start Time')
+                            ->type('time')
+                            ->required(),
+
+                        TextInput::make('end_time')
+                            ->label('End Time')
+                            ->type('time')
+                            ->required(),
+                    ])
+                    ->minItems(1)
+                    ->maxItems(10),
             ]);
     }
-    
+
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table
@@ -105,26 +117,22 @@ class DoctorResource extends Resource
                 TextColumn::make('user.email')
                     ->label('Email')
                     ->searchable(),
-    
-                TextColumn::make('user.user_type')
-                    ->label('User Type')
-                    ->sortable(),
-    
+
                 TextColumn::make('name')
                     ->label('Name')
                     ->searchable(),
-    
+
                 TextColumn::make('department.name')
                     ->label('Department')
                     ->sortable(),
-    
+
                 TextColumn::make('specialization')
                     ->label('Specialization'),
-    
+
                 TextColumn::make('price')
                     ->label('Consultation Fee')
                     ->money('USD'),
-    
+
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
@@ -141,7 +149,9 @@ class DoctorResource extends Resource
             ])
             ->defaultSort('name');
     }
-    
+
+
+
 public static function query(Builder $query): Builder
 {
     return $query->with('roles');

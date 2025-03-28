@@ -10,17 +10,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use App\Models\User;
 class ListDoctors extends ListRecords
-{   protected static string $resource = DoctorResource::class;
-    protected function getTableQuery(): ?Builder
+{    protected static string $resource = DoctorResource::class;
+    protected function getHeaderActions(): array
     {
-        $query = parent::getTableQuery();
-
-        $user = Auth::user();
-
-        if (Gate::allows('view_any_doctor')) {
-            return $query; 
-        }
-
-        return $query->where('user_id', $user->id); 
+        return [
+            Actions\CreateAction::make(),
+        ];
     }
 }
