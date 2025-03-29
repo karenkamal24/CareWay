@@ -12,6 +12,7 @@ use App\Http\Controllers\User\PaymentController;
 use App\Http\Controllers\User\TestResultController;
 use App\Http\Controllers\User\DoctorController;
 use App\Http\Controllers\User\DepartmentController;
+use App\Http\Controllers\User\AppointmentController;
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -55,6 +56,18 @@ Route::middleware('auth:sanctum')->group(function (){
         Route::get('/{id}', [DepartmentController::class, 'show']);
     });
     
+    Route::prefix('appointments')->middleware('auth')->group(function () {
+        Route::get('/', [AppointmentController::class, 'index'])->name('appointments.index');
+        Route::post('/store', [AppointmentController::class, 'storeAppointment'])->name('appointments.store');
+        Route::put('/update/{id}', [AppointmentController::class, 'updateAppointment'])->name('appointments.update');
+        Route::delete('/delete/{id}', [AppointmentController::class, 'deleteAppointment'])->name('appointments.delete');
+    });    
+    
+
+
+
+
+
 });
 
 
@@ -79,3 +92,5 @@ Route::prefix('medicines')->group(function () {
     Route::get('/{id}', [MedicineController::class, 'show']);
 });
 Route::post('/paymob/webhook', [PaymentController::class, 'handleWebhook']);
+Route::post('/paymob/webhook', [AppointmentController::class, 'paymobWebhook']);
+

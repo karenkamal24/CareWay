@@ -78,7 +78,7 @@ class DoctorResource extends Resource
                     ->label('Active')
                     ->default(true),
 
-                Repeater::make('AvailableDoctor')
+                    Repeater::make('AvailableDoctor')
                     ->label('Available Schedule')
                     ->relationship('availableAppointments')
                     ->schema([
@@ -94,19 +94,34 @@ class DoctorResource extends Resource
                                 'Saturday' => 'Saturday',
                             ])
                             ->required(),
-
+                
                         TextInput::make('start_time')
                             ->label('Start Time')
                             ->type('time')
                             ->required(),
-
+                
                         TextInput::make('end_time')
                             ->label('End Time')
                             ->type('time')
                             ->required(),
+                        Select::make('type')
+                            ->label('Appointment Type')
+                            ->options([
+                                'clinic' => 'Clinic',
+                                'online' => 'Online',
+                            ])
+                            ->default('clinic')
+                            ->required(),
+                
+                        // إضافة حقل الـ is_booked لتحديد ما إذا كان الموعد محجوزًا أم لا
+                        Toggle::make('is_booked')
+                            ->label('Is Booked')
+                            ->default(false) // القيمة الافتراضية هي false (غير محجوز)
+                            ->required(),
                     ])
                     ->minItems(1)
                     ->maxItems(10),
+                
             ]);
     }
 
