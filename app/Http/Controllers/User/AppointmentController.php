@@ -144,7 +144,7 @@ class AppointmentController extends Controller
                 Log::info(' Payment successful!', ['order_id' => $orderId]);
             } else {
                 $appointment->payment_status = 'failed';
-                Log::warning('⚠️ Payment failed.', ['order_id' => $orderId]);
+                Log::warning(' Payment failed.', ['order_id' => $orderId]);
             }
     
             $appointment->save();

@@ -18,7 +18,8 @@ class Appointment extends Model
         'payment_status',
         'amount',
         'payment_method',
-        'paymob_order_id'
+        'paymob_order_id',
+        'status'
 
     ];
     protected $casts = [

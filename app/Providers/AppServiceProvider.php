@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use App\Policies\DashboardPolicy;
 use App\Dashboard;
+use App\Models\User;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -21,7 +22,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-       
-    Gate::policy(Dashboard::class, DashboardPolicy::class);
+        // Gate::define('update_appointment_status', function (User $user) {
+        //     return $user->usertype === 'admin' && $user->hasRole('doctor') || $user->hasRole('super_admin');
+        // });
+    
+        Gate::policy(Dashboard::class,DashboardPolicy::class);
     }
+    
 }
