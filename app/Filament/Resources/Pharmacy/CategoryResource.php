@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
+use App\Models\User;
+use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 
 class CategoryResource extends Resource
 {
@@ -80,4 +82,5 @@ class CategoryResource extends Resource
             'edit' => Pages\EditCategory::route('/{record}/edit'),
         ];
     }
+  
 }

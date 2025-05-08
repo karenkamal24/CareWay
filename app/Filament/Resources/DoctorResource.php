@@ -113,10 +113,10 @@ class DoctorResource extends Resource
                             ->default('clinic')
                             ->required(),
                 
-                        // إضافة حقل الـ is_booked لتحديد ما إذا كان الموعد محجوزًا أم لا
+                      
                         Toggle::make('is_booked')
                             ->label('Is Booked')
-                            ->default(false) // القيمة الافتراضية هي false (غير محجوز)
+                            ->default(false)
                             ->required(),
                     ])
                     ->minItems(1)

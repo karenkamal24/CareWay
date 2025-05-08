@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Gate;
 use App\Policies\DashboardPolicy;
 use App\Dashboard;
 use App\Models\User;
+use App\Policies\CategoryPolicy;
+use App\Models\Category;
+use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -27,6 +30,9 @@ class AppServiceProvider extends ServiceProvider
         // });
     
         Gate::policy(Dashboard::class,DashboardPolicy::class);
+       
+    Gate::policy(Category::class, CategoryPolicy::class);
     }
+    
     
 }

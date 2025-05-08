@@ -1,0 +1,9 @@
+/* إخفاء السايد بار */
+.fi-sidebar {
+    display: none !important;
+}
+
+/* إزالة المسافة اللي كانت موجودة للسايد بار */
+.fi-main {
+    margin-left: 0 !important;
+}

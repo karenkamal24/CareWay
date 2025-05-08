@@ -15,11 +15,15 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Placeholder;
+use Filament\Tables\Filters\SelectFilter;
+
 
 class AppointmentResource extends Resource
 {
     protected static ?string $model = Appointment::class;
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
+    
+    protected static ?string $navigationGroup = 'Hospital Management';
 
  
     public static function getEloquentQuery(): Builder
@@ -72,35 +76,39 @@ class AppointmentResource extends Resource
 
                 
                 
-                Placeholder::make('slot_details')
+                    Placeholder::make('slot_details')
                     ->label('Slot Details')
-                    ->content(fn ($get) => optional(\App\Models\AvailableDoctor::find($get('available_doctor_id')))
-                        ? "{$get('available_doctor_id')}: " . \App\Models\AvailableDoctor::find($get('available_doctor_id'))->day
-                            . ' - ' . \App\Models\AvailableDoctor::find($get('available_doctor_id'))->start_time
-                            . ' to ' . \App\Models\AvailableDoctor::find($get('available_doctor_id'))->end_time
-                            . ' (' . \App\Models\AvailableDoctor::find($get('available_doctor_id'))->type . ')'
-                        : 'Select a slot'),
+                    ->content(function ($get) {
+                        $slot = \App\Models\AvailableDoctor::find($get('available_doctor_id'));
+                        if ($slot) {
+                            return "{$slot->id}: {$slot->day} - {$slot->start_time} to {$slot->end_time} ({$slot->type})";
+                        }
+                        return 'Select a slot';
+                    }),
                 
                 
 
                 DateTimePicker::make('appointment_time')
-                    ->required(),
+                    ->required()
+                    ->disabled(),
 
                 Select::make('payment_status')
                     ->options([
                         'pending' => 'Pending',
-                        'paid' => 'Paid',
+                        'completed' => 'Completed',
                         'failed' => 'Failed',
                     ])
-                    ->required(),
+                   
+                    ->disabled(),
 
                 TextInput::make('amount')
                     ->numeric()
-                    ->required(),
+                    ->disabled(),
 
 
                 TextInput::make('paymob_order_id')
-                    ->nullable(),
+                    ->nullable()
+                    ->disabled(),
 
                 Select::make('status')
                     ->options([
@@ -119,8 +127,20 @@ class AppointmentResource extends Resource
                 TextColumn::make('user.name')->label('Patient'),
                 TextColumn::make('doctor.name')->label('Doctor'),
                 TextColumn::make('appointment_time')->dateTime(),
-                TextColumn::make('payment_status')->badge(),
-                TextColumn::make('status')->badge(),
+                TextColumn::make('slot_details')
+                ->label('Slot Details')
+                ->getStateUsing(function ($record) {
+                    $availableDoctor = \App\Models\AvailableDoctor::find($record->available_doctor_id);
+                    return $availableDoctor
+                        ? "{$record->available_doctor_id}: {$availableDoctor->day} - {$availableDoctor->start_time} to {$availableDoctor->end_time} ({$availableDoctor->type})"
+                        : 'Select a slot';
+                })
+                ->badge()
+                ->sortable(),
+                TextColumn::make('status')
+                ->label('Status')
+                ->badge()
+                ->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -129,6 +149,8 @@ class AppointmentResource extends Resource
                         'completed' => 'Completed',
                         'canceled' => 'Canceled',
                     ]),
+                   
+         
             ])
             ->searchable();
     }

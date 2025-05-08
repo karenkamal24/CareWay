@@ -40,8 +40,14 @@ class AppointmentController extends Controller
     
             $doctor = Doctor::findOrFail($availableDoctor->doctor_id);
             $amount = $doctor->price;
-            $type = $request->type;
+            $type = $availableDoctor->type;
+    
             $paymentMethod = $request->has('pay_with_card') ? 'card' : 'cash';
+    
+           
+            if ($type === 'online' && $paymentMethod !== 'card') {
+                return response()->json(['error' => 'Online appointments must be paid by card.'], 422);
+            }
     
             $appointment = Appointment::create([
                 'user_id' => $user->id,
@@ -93,7 +99,8 @@ class AppointmentController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Appointment created successfully, please complete the payment.',
-                    'payment_url' => $iframeUrl
+                    'payment_url' => $iframeUrl,
+                    'paymob_order_id' => $paymobOrderId,
                 ]);
             }
     
@@ -102,6 +109,7 @@ class AppointmentController extends Controller
                 'success' => true,
                 'message' => 'Appointment successfully booked! Please pay at the clinic.'
             ]);
+    
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Booking failed', ['error' => $e->getMessage()]);
@@ -109,9 +117,10 @@ class AppointmentController extends Controller
         }
     }
     
+    
     public function paymobWebhook(Request $request)
     {
-        Log::info('📡 Paymob Webhook received', $request->all());
+        Log::info(' Paymob Webhook received', $request->all());
     
         try {
             $data = $request->all();
