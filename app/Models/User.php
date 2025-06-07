@@ -63,23 +63,13 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'date_of_birth' => 'date',
             'last_otp_expire' => 'datetime',
+            'date_of_birth' => 'date:Y-m-d',  // يعرض فقط تاريخ بدون وقت
+            'created_at' => 'datetime:Y-m-d H:i:s', // يمكن تعديل التنسيق حسب الحاجة
+            'updated_at' => 'datetime:Y-m-d H:i:s',
         ];
     }
-    public function generateOtp($expiryMinutes = 10)
-    {
-
-        $otp = rand(1000, 9999); 
-        $title = "Your authentication for application CareWay Hospital ";
-        $body = "Your authentication OTP is: $otp";
-        $this->sendEmail($this->email, $title, $body);
-        $this->update([
-            'last_otp' => Hash::make($otp),
-            'last_otp_expire' => Carbon::now()->addMinutes($expiryMinutes), 
-        ]);
-        return $otp;
-    }
+ 
     public function canAccessPanel(Panel $panel): bool
 {
     if ($panel->getId() === 'admin') {
