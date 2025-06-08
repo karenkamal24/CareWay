@@ -3,7 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\Auth\AuthController;
-use App\Http\Controllers\User\CategoryController;
+use App\Http\Controllers\User\Pharmacy\CategoryController;
 use App\Http\Controllers\User\OrderController;
 use App\Http\Controllers\User\MedicineController;
 use App\Http\Controllers\User\Pharmacy\CartController;

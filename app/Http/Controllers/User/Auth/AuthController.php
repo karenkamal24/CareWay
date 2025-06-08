@@ -1,122 +1,99 @@
 <?php
 
 namespace App\Http\Controllers\User\Auth;
+
 use App\Traits\SendMailTrait;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\User;
 use App\Services\AuthService\AuthService;
 use App\Services\AuthService\OtpService;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\ValidateOtpRequest;
-use Illuminate\Http\JsonResponse;
 use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Helpers\ApiResponseHelper;
+use App\Models\User;
+
 class AuthController extends Controller
 {
     use SendMailTrait;
-    protected $AuthService;
-    protected $otpService;
 
-    public function __construct(AuthService $AuthService, OtpService $otpService)
+    protected AuthService $authService;
+    protected OtpService $otpService;
+
+    public function __construct(AuthService $authService, OtpService $otpService)
     {
-    $this->AuthService = $AuthService;
-    $this->otpService = $otpService;
+        $this->authService = $authService;
+        $this->otpService = $otpService;
     }
 
     public function register(RegisterRequest $request)
     {
-        $data = $request->validated();
+        $response = $this->authService->register($request->validated());
 
-        $result = $this->AuthService->register($data);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'User registered successfully.',
-            'token' => $result['token'],
-            'user' => $result['user'],
-        ], 201);
+        return ApiResponseHelper::success(
+            'User registered successfully.',
+            ['user' => $response['user'], 'token' => $response['token']],
+            ApiResponseHelper::STATUS_CREATED
+        );
     }
 
-    public function login(LoginRequest $request): JsonResponse
+    public function login(LoginRequest $request)
     {
-        $data = $request->validated();
+        $response = $this->authService->login($request->validated());
 
-        $result = $this->AuthService->login($data);
-
-        if (!$result) {
-            return response()->json([
-                'message' => 'Invalid email or password',
-            ], 401);
+        if (!$response) {
+            return ApiResponseHelper::unauthorized('Invalid email or password');
         }
 
-        return response()->json([
-            'message' => 'Login successful',
-            'token' => $result['token'],
-            'user' => $result['user'],
-        ]);
+        return ApiResponseHelper::success(
+            'Login successful',
+            ['user' => $response['user'], 'token' => $response['token']]
+        );
     }
+
     public function logout(Request $request)
     {
-        $user = $request->user();
+        $result = $this->authService->logout($request->user());
 
-        if (!$user) {
-            return response()->json([
-                'message' => 'No authenticated user found'
-            ], 401);
+        if ($result['status'] === false) {
+            return ApiResponseHelper::unauthorized($result['message']);
         }
 
-        /** @var \Laravel\Sanctum\PersonalAccessToken|null $token */
-        $token = $user->currentAccessToken();
-
-        if ($token) {
-            $token->delete();
-
-            return response()->json([
-                'message' => 'Logout successful'
-            ], 200);
-        }
-
-        return response()->json([
-            'message' => 'No valid access token found'
-        ], 401);
+        return ApiResponseHelper::success($result['message']);
     }
 
     public function forgotPassword(ForgotPasswordRequest $request)
     {
+        $result = $this->authService->forgotPassword($request->email);
 
-        $user = User::where('email', $request->email)->first();
+        if ($result['status']) {
+            return apiResponse()->success($result['message'], null, $result['code']);
+        }
 
-        $otpService = new OtpService();
-        $otp = $otpService->generateOtpForUser($user);
-
-        return response()->json([
-            'status' => true,
-            'message' => 'OTP sent to your email.',
-        ], 200);
+        return apiResponse()->error($result['message'], $result['code']);
     }
 
-public function validateOtpForPasswordReset(ValidateOtpRequest $request, AuthService $AuthService)
-{
-    $response = $AuthService->validateOtp($request->validated());
+    public function validateOtpForPasswordReset(ValidateOtpRequest $request)
+    {
+        $response = $this->authService->validateOtp($request->validated());
 
-    return response()->json([
-        'status' => $response['status'],
-        'message' => $response['message'],
-    ], $response['code']);
-}
+        if (!$response['status']) {
+            return ApiResponseHelper::error($response['message'], $response['code']);
+        }
 
-public function resetPassword(ResetPasswordRequest $request, AuthService $AuthService)
-{
-    $response = $AuthService->resetPassword($request->validated());
+        return ApiResponseHelper::success($response['message']);
+    }
 
-    return response()->json([
-        'status' => $response['status'],
-        'message' => $response['message'],
-    ], $response['code']);
-}
+    public function resetPassword(ResetPasswordRequest $request)
+    {
+        $response = $this->authService->resetPassword($request->validated());
 
+        if (!$response['status']) {
+            return ApiResponseHelper::error($response['message'], $response['code']);
+        }
 
-
+        return ApiResponseHelper::success($response['message']);
+    }
 }
