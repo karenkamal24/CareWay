@@ -2,9 +2,9 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Cart\AddToCartRequest;
-use App\Http\Requests\Cart\UpdateCartItemRequest;
-use App\Services\CartService\CartService;
+use App\Http\Requests\pharmacy\Cart\AddToCartRequest;
+use App\Http\Requests\pharmacy\Cart\UpdateCartItemRequest;
+use App\Services\pharmacy\CartService\CartService;
 use Illuminate\Http\JsonResponse;
 
 class CartController extends Controller

@@ -1,5 +1,5 @@
 <?php
-namespace App\Services\CartService;
+namespace App\Services\pharmacy\CartService;
 
 use App\Models\Cart;
 use App\Models\CartItem;
@@ -9,8 +9,23 @@ use Exception;
 
 class CartService
 {
+    private function checkAuth()
+    {
+        if (!Auth::check()) {
+            return [
+                'success' => false,
+                'message' => 'User must be logged in',
+            ];
+        }
+        return null;
+    }
+
     public function addItem(int $medicineId, int $quantity)
     {
+        if ($response = $this->checkAuth()) {
+            return $response;
+        }
+
         try {
             $medicine = Product::findOrFail($medicineId);
 
@@ -57,6 +72,10 @@ class CartService
 
     public function updateItem(int $cartItemId, int $quantity)
     {
+        if ($response = $this->checkAuth()) {
+            return $response;
+        }
+
         try {
             $cartItem = CartItem::findOrFail($cartItemId);
 
@@ -87,6 +106,10 @@ class CartService
 
     public function getCart()
     {
+        if ($response = $this->checkAuth()) {
+            return $response;
+        }
+
         try {
             $cart = Cart::where('user_id', Auth::id())->first();
 
@@ -126,6 +149,10 @@ class CartService
 
     public function removeItem(int $cartItemId)
     {
+        if ($response = $this->checkAuth()) {
+            return $response;
+        }
+
         try {
             $cartItem = CartItem::findOrFail($cartItemId);
 
@@ -146,6 +173,10 @@ class CartService
 
     public function clearCart()
     {
+        if ($response = $this->checkAuth()) {
+            return $response;
+        }
+
         try {
             $cart = Cart::where('user_id', Auth::id())->first();
 
