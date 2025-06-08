@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\User;
+namespace App\Http\Controllers\User\Auth;
 use App\Traits\SendMailTrait;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
