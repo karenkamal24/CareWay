@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 
 class ApiResponseHelper
 {
+
     public const STATUS_OK = 200;
     public const STATUS_CREATED = 201;
     public const STATUS_ACCEPTED = 202;

@@ -1,5 +1,5 @@
 <?php
-namespace App\Services\pharmacy\CartService;
+namespace App\Services\Pharmacy;
 
 use App\Models\Cart;
 use App\Models\CartItem;
@@ -134,9 +134,12 @@ class CartService
 
             return [
                 'success' => true,
-                'cart_id' => $cart->id,
-                'items' => $cartItems,
-                'total' => $cartItems->sum('total_price'),
+                'message' => 'Cart retrieved successfully.',
+                'data' => [
+                    'cart_id' => $cart->id,
+                    'items' => $cartItems,
+                    'total' => $cartItems->sum('total_price'),
+                ],
             ];
         } catch (Exception $e) {
             return [
@@ -146,6 +149,7 @@ class CartService
             ];
         }
     }
+
 
     public function removeItem(int $cartItemId)
     {

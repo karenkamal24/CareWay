@@ -1,13 +1,12 @@
 <?php
+namespace App\Services\Pharmacy;
 
-namespace App\Http\Controllers\User;
 use App\Models\Product;
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-class MedicineController extends Controller
+
+class MedicineService
 {
-    public function index()
+    public function getAllMedicines(): array
     {
         $products = Product::all()->map(function ($product) {
             return [
@@ -21,18 +20,18 @@ class MedicineController extends Controller
             ];
         });
 
-        return response()->json($products, 200);
+        return $products->toArray();
     }
 
-    public function show($id)
+    public function getMedicineById($id): ?array
     {
         $medicine = Product::find($id);
 
         if (!$medicine) {
-            return response()->json(['message' => 'Medicine not found'], 404);
+            return null;
         }
 
-        return response()->json([
+        return [
             'id' => $medicine->id,
             'name' => $medicine->name,
             'description' => $medicine->description,
@@ -40,7 +39,6 @@ class MedicineController extends Controller
             'quantity' => $medicine->quantity,
             'status' => $medicine->status,
             'main_image_url' => $medicine->image ? url(Storage::url($medicine->image)) : null,
-        ], 200);
+        ];
     }
-
 }

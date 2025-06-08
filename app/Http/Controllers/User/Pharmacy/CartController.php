@@ -1,11 +1,13 @@
 <?php
-namespace App\Http\Controllers\User\pharmacy;
+namespace App\Http\Controllers\User\Pharmacy;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\pharmacy\Cart\AddToCartRequest;
 use App\Http\Requests\pharmacy\Cart\UpdateCartItemRequest;
-use App\Services\pharmacy\CartService\CartService;
+use App\Services\Pharmacy\CartService;
 use Illuminate\Http\JsonResponse;
+use App\Helpers\ApiResponseHelper;
+
 
 class CartController extends Controller
 {
@@ -21,16 +23,10 @@ class CartController extends Controller
         $result = $this->cartService->addItem($request->medicine_id, $request->quantity);
 
         if (!$result['success']) {
-            return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null,
-            ], 400);
+            return ApiResponseHelper::error($result['message']);
         }
 
-        return response()->json([
-            'message' => $result['message'],
-            'cart_item' => $result['cart_item']
-        ], 200);
+        return ApiResponseHelper::success('Item added to cart successfully.', $result['cart_item']);
     }
 
     public function updateItem(UpdateCartItemRequest $request, int $cartItemId): JsonResponse
@@ -38,16 +34,10 @@ class CartController extends Controller
         $result = $this->cartService->updateItem($cartItemId, $request->quantity);
 
         if (!$result['success']) {
-            return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null,
-            ], 400);
+            return ApiResponseHelper::error($result['message']);
         }
 
-        return response()->json([
-            'message' => $result['message'],
-            'cart_item' => $result['cart_item']
-        ], 200);
+        return ApiResponseHelper::success('Cart item updated successfully.', $result['cart_item']);
     }
 
     public function index(): JsonResponse
@@ -55,27 +45,22 @@ class CartController extends Controller
         $result = $this->cartService->getCart();
 
         if (!$result['success']) {
-            return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null,
-            ], 200);
+            return ApiResponseHelper::error($result['message']);
         }
 
-        return response()->json($result, 200);
+        return ApiResponseHelper::success('Cart retrieved successfully.', $result['data']);
     }
+
 
     public function removeItem(int $cartItemId): JsonResponse
     {
         $result = $this->cartService->removeItem($cartItemId);
 
         if (!$result['success']) {
-            return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null,
-            ], 404);
+            return ApiResponseHelper::notFound($result['message']);
         }
 
-        return response()->json(['message' => $result['message']], 200);
+        return ApiResponseHelper::success($result['message']);
     }
 
     public function clearCart(): JsonResponse
@@ -83,12 +68,9 @@ class CartController extends Controller
         $result = $this->cartService->clearCart();
 
         if (!$result['success']) {
-            return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null,
-            ], 200);
+            return ApiResponseHelper::error($result['message']);
         }
 
-        return response()->json(['message' => $result['message']], 200);
+        return ApiResponseHelper::success($result['message']);
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\pharmacy\Category;
+namespace App\Services\Pharmacy;
 
 use App\Models\Category;
 use Illuminate\Support\Facades\Storage;
