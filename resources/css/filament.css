@@ -7,3 +7,26 @@
 .fi-main {
     margin-left: 0 !important;
 }
+
+/* إظهار الـ logo (النص) عند طي السايدبار */
+.filament-sidebar-collapsed .filament-brand {
+    display: block !important; /* إظهار النص */
+    opacity: 1 !important; /* التأكد من أن النص مرئي */
+    visibility: visible !important; /* جعل النص مرئيًا */
+    width: auto; /* السماح للنص بالظهور بعرضه الطبيعي */
+    padding: 0.5rem; /* إضافة مسافة داخلية لتحسين المظهر */
+    text-align: center; /* محاذاة النص في المنتصف */
+}
+
+/* تخصيص مظهر النص */
+.filament-brand {
+    font-size: 1rem; /* حجم النص - يمكنكِ تعديله */
+    font-weight: bold; /* جعل النص بارزًا */
+    color: #333; /* لون النص - يمكنكِ تغييره */
+    white-space: nowrap; /* منع النص من الانتقال إلى سطر جديد */
+}
+
+/* ضبط السايدبار عند الطي لتجنب التداخل */
+.filament-sidebar-collapsed .filament-sidebar {
+    align-items: center; /* محاذاة العناصر في المنتصف */
+}

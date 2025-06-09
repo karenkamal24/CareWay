@@ -89,5 +89,9 @@ return [
     'assets' => [
     'css/filament.css',
 ],
-
+'vite_theme' => [
+    'css' => [
+        'resources/css/filament.css',
+    ],
+],
 ];

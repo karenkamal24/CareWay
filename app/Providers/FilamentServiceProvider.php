@@ -1,8 +1,9 @@
 <?php
 
 namespace App\Providers;
-
+use Filament\Facades\Filament;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 
 class FilamentServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,11 @@ class FilamentServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Filament::serving(function () {
+            Filament::registerRenderHook(
+                'body.end',
+                fn (): string => view('livewire.notifications-listener')->render()
+            );
+        });
     }
 }

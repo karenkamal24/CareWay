@@ -12,7 +12,7 @@ use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
-use App\Services\DeliveryService;
+use App\Services\Pharmacy\DeliveryService;
 
 class PaymentController extends Controller
 {
@@ -25,10 +25,10 @@ class PaymentController extends Controller
             Log::error('PAYMOB_API_KEY is missing in .env file.');
             return null;
         }
-    
+
         $response = Http::post("{$this->apiUrl}/auth/tokens", ['api_key' => $apiKey]);
         $data = $response->json();
-    
+
         if ($response->successful()) {
             Log::info('Paymob Authentication Response', ['response' => $data]);
             return $data['token'] ?? null;
@@ -81,20 +81,20 @@ class PaymentController extends Controller
             if (!$user) {
                 return response()->json(['error' => 'User not authenticated!'], 401);
             }
-    
+
             // استرجاع العناصر من السلة
             $cartItems = CartItem::whereHas('cart', fn($query) => $query->where('user_id', $user->id))->get();
-    
+
             if ($cartItems->isEmpty()) {
                 return response()->json(['error' => 'Cart is empty!'], 400);
             }
-    
+
             // حساب سعر التوصيل والإجمالي
             $distanceKm = $deliveryService->getDistanceFromPharmacy($request->latitude, $request->longitude);
             $deliveryFee = $deliveryService->calculateDeliveryFee($distanceKm);
             $totalPrice = $cartItems->sum(fn($item) => $item->price * $item->quantity);
             $finalPrice = $totalPrice + $deliveryFee;
-    
+
             // بيانات الفاتورة
             $billingData = [
                 "first_name" => $request->first_name ?? '',
@@ -108,7 +108,7 @@ class PaymentController extends Controller
                 "floor" => $request->floor ?? '',
                 "apartment" => $request->apartment ?? '',
             ];
-    
+
             // إنشاء الطلب
             $order = Order::create([
                 'user_id' => $user->id,
@@ -122,20 +122,20 @@ class PaymentController extends Controller
                 'status' => 'pending',
                 'payment_state' => 'initiated', // تم إضافة payment_state
             ]);
-    
+
             // Paymob API Integration
             $authToken = $this->authenticate();
             if (!$authToken) throw new \Exception("Authentication failed");
-    
+
             $paymobOrder = $this->createOrder($authToken, $finalPrice);
             if (!isset($paymobOrder['id'])) throw new \Exception("Failed to create Paymob order");
-    
+
             $order->paymob_order_id = $paymobOrder['id'];
             $order->save();
-    
+
             $paymentToken = $this->getPaymentKey($authToken, $paymobOrder['id'], $finalPrice, $billingData);
             if (!$paymentToken) throw new \Exception("Failed to generate payment token");
-    
+
             // تقليل الكمية لكل منتج في السلة
             foreach ($cartItems as $cartItem) {
                 $medicine = Product::find($cartItem->medicine_id);
@@ -144,15 +144,15 @@ class PaymentController extends Controller
                     $medicine->save();
                 }
             }
-    
+
             // حذف العناصر من السلة
             CartItem::whereHas('cart', fn($query) => $query->where('user_id', $user->id))->delete();
-    
+
             $iframeId = env('PAYMOB_IFRAME_ID');
             $iframeUrl = "https://accept.paymob.com/api/acceptance/iframes/{$iframeId}?payment_token={$paymentToken}";
-    
+
             DB::commit();
-    
+
             return response()->json([
                 'message' => 'Order created successfully! Proceed to payment.',
                 'order_id' => $order->id,
@@ -174,31 +174,31 @@ class PaymentController extends Controller
     public function handleWebhook(Request $request)
     {
         Log::info('Paymob Webhook Received', ['data' => $request->all()]);
-        
+
         $paymobOrderId = $request->input('obj.order.id');
         $transactionStatus = $request->input('obj.success');
-    
+
         $order = Order::where('paymob_order_id', $paymobOrderId)->first();
         if (!$order) {
             Log::error('Order not found for Paymob Order ID', ['paymob_order_id' => $paymobOrderId]);
             return response()->json(['error' => 'Order not found'], 404);
         }
-    
+
         if ($transactionStatus) {
-          
-            $order->payment_state = 'completed'; 
+
+            $order->payment_state = 'completed';
             Log::info('Payment successful', ['order_id' => $order->id]);
         } else {
-       
-            $order->payment_state = 'failed'; 
+
+            $order->payment_state = 'failed';
             Log::warning('Payment failed', ['order_id' => $order->id]);
         }
-        
+
         $order->save();
         return response()->json(['message' => 'Webhook processed successfully'], 200);
     }
-    
 
-    
-    
+
+
+
 }

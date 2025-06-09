@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Providers\Filament;
-
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -21,9 +20,9 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\Settings;
+use Filament\Panel\Components\RenderHook;
 use App\Filament\Resources\UserResource;
 use App\Filament\Resources\RoleResource;
-
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Navigation\NavigationGroup;
 use App\Filament\Resources\Pharmacy\CategoryResource;
@@ -53,13 +52,14 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Dashboard::class,
-             
+
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 \App\Filament\Widgets\Chart::class,
                 \App\Filament\Widgets\OrdersStatsOverview::class,
                 \App\Filament\Widgets\orderstuts::class,
+                \Filament\Notifications\Livewire\Notifications::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -72,6 +72,8 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('30s')
             ->authMiddleware([
                 Authenticate::class,
             ])
@@ -83,67 +85,76 @@ class AdminPanelProvider extends PanelProvider
             ->plugins([
                 FilamentShieldPlugin::make(),
             ])
-            ->topNavigation()
-            ->sidebarCollapsibleOnDesktop(false)
-            ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
-                return $builder->groups([
-                    NavigationGroup::make('إدارة المستشفى')
-                        ->items([
-                            NavigationItem::make('الرئيسية')
-                                ->url(fn () => Dashboard::getUrl())
-                                ->icon('heroicon-o-home')
-                                ->isActiveWhen(fn () => request()->routeIs('filament.admin.pages.dashboard')),
-                            NavigationItem::make('المستخدمين')
-                                ->url(fn () => UserResource::getUrl('index'))
-                                ->icon('heroicon-o-users')
-                                ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.users.*')),
-                            NavigationItem::make('الأدوار')
-                                ->url(fn () => RoleResource::getUrl('index'))
-                                ->icon('heroicon-o-shield-check')
-                                ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.roles.*')),
-                            NavigationItem::make('الأقسام')
-                                ->url(fn () => DepartmentResource::getUrl('index'))
-                                ->icon('heroicon-o-folder')
-                                ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.departments.*')),
-                        ]),
-                    NavigationGroup::make('الأطباء')
-                        ->items([
-                            NavigationItem::make('الأطباء')
-                                ->url(fn () => DoctorResource::getUrl('index'))
-                                ->icon('heroicon-o-user-group')
-                                ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.doctors.*')),
-                            NavigationItem::make('المواعيد')
-                                ->url(fn () => AppointmentResource::getUrl('index'))
-                                ->icon('heroicon-o-calendar')
-                                ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.appointments.*')),
-                        ]),
-                        NavigationGroup::make('المعمل')
-                        ->items([
-                            NavigationItem::make('الفحوصات')
-                                ->url(fn () => TestResultResource::getUrl('index'))
-                                ->icon('heroicon-o-beaker')
-                                ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.lab-tests.*')),
-                        ]),
-                    NavigationGroup::make('الصيدلية')
-                        ->items([
-                            NavigationItem::make('الفئات')
-                                ->url(fn () => CategoryResource::getUrl('index'))
-                                ->icon('heroicon-o-rectangle-stack')
-                                ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.categories.*')),
-                            NavigationItem::make('إعدادات التوصيل')
-                                ->url(fn () => DeliverySettingResource::getUrl('index'))
-                                ->icon('heroicon-o-truck')
-                                ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.delivery-settings.*')),
-                            NavigationItem::make('الطلبات النقدية')
-                                ->url(fn () => OrderResource::getUrl('index'))
-                                ->icon('heroicon-o-shopping-cart')
-                                ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.orders.*')),
-                            NavigationItem::make('المنتجات')
-                                ->url(fn () => ProductResource::getUrl('index'))
-                                ->icon('heroicon-o-rectangle-stack')
-                                ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.products.*')),
-                        ]),
-                ]);
-            });
+
+            // ->topNavigation()
+            // ->sidebarCollapsibleOnDesktop(true);
+            ->sidebarFullyCollapsibleOnDesktop()
+            // ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
+            //     return $builder->groups([
+            //         NavigationGroup::make('إدارة المستشفى')
+            //             ->items([
+            //                 NavigationItem::make('الرئيسية')
+            //                     ->url(fn () => Dashboard::getUrl())
+            //                     ->icon('heroicon-o-home')
+            //                     ->isActiveWhen(fn () => request()->routeIs('filament.admin.pages.dashboard')),
+            //                 NavigationItem::make('المستخدمين')
+            //                     ->url(fn () => UserResource::getUrl('index'))
+            //                     ->icon('heroicon-o-users')
+            //                     ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.users.*')),
+            //                 NavigationItem::make('الأدوار')
+            //                     ->url(fn () => RoleResource::getUrl('index'))
+            //                     ->icon('heroicon-o-shield-check')
+            //                     ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.roles.*')),
+            //                 NavigationItem::make('الأقسام')
+            //                     ->url(fn () => DepartmentResource::getUrl('index'))
+            //                     ->icon('heroicon-o-folder')
+            //                     ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.departments.*')),
+            //             ]),
+            //         NavigationGroup::make('الأطباء')
+            //             ->items([
+            //                 NavigationItem::make('الأطباء')
+            //                     ->url(fn () => DoctorResource::getUrl('index'))
+            //                     ->icon('heroicon-o-user-group')
+            //                     ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.doctors.*')),
+            //                 NavigationItem::make('المواعيد')
+            //                     ->url(fn () => AppointmentResource::getUrl('index'))
+            //                     ->icon('heroicon-o-calendar')
+            //                     ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.appointments.*')),
+            //             ]),
+            //             NavigationGroup::make('المعمل')
+            //             ->items([
+            //                 NavigationItem::make('الفحوصات')
+            //                     ->url(fn () => TestResultResource::getUrl('index'))
+            //                     ->icon('heroicon-o-beaker')
+            //                     ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.lab-tests.*')),
+            //             ]),
+            //         NavigationGroup::make('الصيدلية')
+            //             ->items([
+            //                 NavigationItem::make('الفئات')
+            //                     ->url(fn () => CategoryResource::getUrl('index'))
+            //                     ->icon('heroicon-o-rectangle-stack')
+            //                     ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.categories.*')),
+            //                 NavigationItem::make('إعدادات التوصيل')
+            //                     ->url(fn () => DeliverySettingResource::getUrl('index'))
+            //                     ->icon('heroicon-o-truck')
+            //                     ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.delivery-settings.*')),
+            //                 NavigationItem::make('الطلبات النقدية')
+            //                     ->url(fn () => OrderResource::getUrl('index'))
+            //                     ->icon('heroicon-o-shopping-cart')
+            //                     ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.orders.*')),
+            //                     NavigationItem::make('المنتجات')
+            //                     ->url(fn () => ProductResource::getUrl('index'))
+            //                     ->icon('heroicon-o-rectangle-stack')
+            //                     ->badge(fn () => \App\Models\Product::where('quantity', '<=', 10)->count(), color: 'danger')
+            //                     ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.products.*')),
+            //             ]),
+
+            //     ]);
+            // });
+            ->renderHook(
+                'body.end',
+                fn (): string => view('livewire.notifications-listener')->render()
+            ); // ← هذه أهم خطوة
+
     }
 }

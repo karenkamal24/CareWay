@@ -21,7 +21,7 @@ class ApiResponseHelper
     public const STATUS_INTERNAL_SERVER_ERROR = 500;
     public const STATUS_SERVICE_UNAVAILABLE = 503;
 
-    // ✅ Success Response
+
     public static function success(string $message, $data = null, int $status = self::STATUS_OK): JsonResponse
     {
         return response()->json([
@@ -31,7 +31,6 @@ class ApiResponseHelper
         ], $status);
     }
 
-    // ✅ Error Response
     public static function error(string $message, int $status = self::STATUS_BAD_REQUEST): JsonResponse
     {
         return response()->json([
@@ -40,7 +39,7 @@ class ApiResponseHelper
         ], $status);
     }
 
-    // ✅ Not Found
+
     public static function notFound(string $message = 'Not Found'): JsonResponse
     {
         return self::error($message, self::STATUS_NOT_FOUND);
