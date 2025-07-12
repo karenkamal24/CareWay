@@ -21,28 +21,29 @@ class OtpService
      * @return array
      * @throws \Exception
      */
-    public function generateOtpForUser(User $user, int $expiryMinutes = 5): array
-    {
-        $otp = rand(1000, 9999);
+public function generateOtpForUser(User $user, int $expiryMinutes = 120): array
+{
+    $otp = rand(1000, 9999);
 
-        $title = "Your authentication for application CareWay Hospital";
-        $body = "Your authentication OTP is: $otp";
+    $title = "Your authentication for CareWay Hospital";
+    $body = "Your authentication OTP is: $otp";
 
-        $response = $this->sendEmail($user->email, $title, $body);
+    $response = $this->sendEmail($user->email, $title, $body);
 
-        if ($response['status'] !== 200) {
-            Log::error('Failed to send OTP email to ' . $user->email . ': ' . $response['message']);
-            throw new Exception('Failed to send OTP email');
-        }
-
-        $user->update([
-            'last_otp' => Hash::make($otp),
-            'last_otp_expire' => Carbon::now()->addMinutes($expiryMinutes),
-        ]);
-
-        return [
-            'status' => true,
-            'message' => 'OTP sent to your email',
-        ];
+    if ($response['status'] !== 200) {
+        Log::error('Failed to send OTP email to ' . $user->email . ': ' . $response['message']);
+        throw new Exception('Failed to send OTP email');
     }
+
+    $user->update([
+        'last_otp' => Hash::make($otp),
+        'last_otp_expire' => Carbon::now('Africa/Cairo')->addMinutes($expiryMinutes),
+    ]);
+
+    return [
+        'status' => true,
+        'message' => 'OTP sent to your email',
+    ];
+}
+
 }

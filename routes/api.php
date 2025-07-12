@@ -9,7 +9,13 @@ use App\Http\Controllers\User\Pharmacy\MedicineController;
 use App\Http\Controllers\User\Pharmacy\CartController;
 use App\Http\Controllers\User\NotificationController;
 use App\Http\Controllers\User\PaymentController;
+use Illuminate\Support\Facades\Http;
+
+use Intervention\Image\Facades\Image;
 use App\Http\Controllers\User\TestResultController;
+use App\Http\Controllers\User\OCRController;
+
+
 use App\Http\Controllers\User\DoctorController;
 use App\Http\Controllers\User\DepartmentController;
 use App\Http\Controllers\User\AppointmentController;
@@ -94,3 +100,57 @@ Route::prefix('medicines')->group(function () {
 Route::post('/paymob/webhook', [PaymentController::class, 'handleWebhook']);
 Route::post('/paymob/webhook', [AppointmentController::class, 'paymobWebhook']);
 
+
+// Route::post('/ocr', function (Request $request) {
+//     if (!$request->hasFile('image')) {
+//         return response()->json([
+//             'status' => false,
+//             'message' => 'Image is required',
+//         ], 422);
+//     }
+
+//     try {
+//         $image = $request->file('image');
+
+//         // ⬛️ تعديل الصورة قبل الإرسال (رمادي + تغيير الحجم + جودة)
+//         $processedImage = Image::make($image)
+//             ->greyscale()
+//             ->resize(1200, null, function ($constraint) {
+//                 $constraint->aspectRatio();
+//                 $constraint->upsize();
+//             })
+//             ->encode('jpg', 90);
+
+//         // ⬛️ إرسال للصورة للـ ngrok OCR
+//         $response = Http::timeout(60)
+//             ->withoutVerifying()
+//             ->attach(
+//                 'image',
+//                 $processedImage->getEncoded(),
+//                 'processed.jpg'
+//             )
+//             ->post('https://32a3-35-245-176-184.ngrok-free.app/ocr');
+
+//         $ocrText = $response->json()['text'] ?? '';
+//         $lines = explode("\n", $ocrText);
+
+//         // ⬛️ تنظيف النتيجة (حذف سطور فاضية أو رموز)
+//         $cleaned = array_filter(array_map(function ($line) {
+//             $line = trim($line);
+//             // تجاهل السطر لو قصير أو مليان رموز فقط
+//             return (strlen($line) > 2 && preg_match('/[a-zA-Z0-9]/', $line)) ? $line : null;
+//         }, $lines));
+
+//         return response()->json([
+//             'status' => true,
+//             'lines' => array_values($cleaned),
+//             'text' => implode(' ', $cleaned), // النتيجة كلها في سطر واحد لو حابة
+//         ]);
+
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'status' => false,
+//             'error' => $e->getMessage()
+//         ]);
+//     }
+// });

@@ -70,136 +70,154 @@ class AuthService
         }
     }
 
-    public function forgotPassword(string $email): array
-    {
-        $user = User::where('email', $email)->first();
+public function forgotPassword(string $email): array
+{
+    $user = User::where('email', $email)->first();
 
-        if (!$user) {
+    if (!$user) {
+        return [
+            'status' => false,
+            'message' => 'User not found',
+            'code' => ApiResponseHelper::STATUS_NOT_FOUND,
+        ];
+    }
+
+    try {
+        $otp = rand(1000, 9999);
+
+        $response = $this->sendEmail(
+            $user->email,
+            'Your authentication for CareWay Hospital',
+            "Your authentication OTP is: $otp"
+        );
+
+        if ($response['status'] !== 200) {
+            Log::error('Failed to send OTP email: ' . $response['message']);
             return [
                 'status' => false,
-                'message' => 'User not found',
-                'code' => ApiResponseHelper::STATUS_NOT_FOUND,
-            ];
-        }
-
-        try {
-            $otp = rand(1000, 9999);
-
-            $response = $this->sendEmail(
-                $user->email,
-                'Your authentication for CareWay Hospital',
-                "Your authentication OTP is: $otp"
-            );
-
-            if ($response['status'] !== 200) {
-                Log::error('Failed to send OTP email: ' . $response['message']);
-
-                return [
-                    'status' => false,
-                    'message' => 'Failed to send OTP. Please try again later.',
-                    'code' => ApiResponseHelper::STATUS_INTERNAL_SERVER_ERROR,
-                ];
-            }
-
-            $user->update([
-                'last_otp' => Hash::make($otp),
-                'last_otp_expire' => Carbon::now()->addMinutes(10),
-            ]);
-
-            return [
-                'status' => true,
-                'message' => 'OTP sent to your email.',
-                'code' => ApiResponseHelper::STATUS_OK,
-            ];
-        } catch (Exception $e) {
-            Log::error('Exception in forgotPassword: ' . $e->getMessage());
-
-            return [
-                'status' => false,
-                'message' => 'Unexpected error occurred.',
+                'message' => 'Failed to send OTP. Please try again later.',
                 'code' => ApiResponseHelper::STATUS_INTERNAL_SERVER_ERROR,
             ];
         }
-    }
 
-    public function validateOtp(array $data): array
-    {
-        $user = User::where('email', $data['email'])->first();
-
-        if (!$user) {
-            return [
-                'status' => false,
-                'message' => 'User not found',
-                'code' => 404,
-            ];
-        }
-
-        if (Carbon::now()->gt($user->last_otp_expire)) {
-            return [
-                'status' => false,
-                'message' => 'OTP has expired',
-                'code' => 400,
-            ];
-        }
-
-        if (!Hash::check($data['otp'], $user->last_otp)) {
-            return [
-                'status' => false,
-                'message' => 'Invalid OTP',
-                'code' => 400,
-            ];
-        }
-
+        $expiry = Carbon::now('Africa/Cairo')->addMinutes(120);
         $user->update([
-            'email_verified_at' => now(),
-            'last_otp' => Hash::make(rand(1000, 9999)), // إعادة تعيين OTP بعد الاستخدام
+            'last_otp' => Hash::make($otp),
+            'last_otp_expire' => $expiry,
         ]);
+
+        Log::info('OTP sent for user: ' . $user->email . ', expires at: ' . $expiry);
 
         return [
             'status' => true,
-            'message' => 'OTP is valid, you can now reset your password',
-            'code' => 200,
+            'message' => 'OTP sent to your email.',
+            'code' => ApiResponseHelper::STATUS_OK,
         ];
-    }
-
-    public function resetPassword(array $data): array
-    {
-        $user = User::where('email', $data['email'])->first();
-
-        if (!$user) {
-            return [
-                'status' => false,
-                'message' => 'User not found',
-                'code' => 404,
-            ];
-        }
-
-        if (Carbon::now()->gt($user->last_otp_expire)) {
-            return [
-                'status' => false,
-                'message' => 'OTP has expired',
-                'code' => 400,
-            ];
-        }
-
-        if (!Hash::check($data['otp'], $user->last_otp)) {
-            return [
-                'status' => false,
-                'message' => 'Invalid OTP',
-                'code' => 400,
-            ];
-        }
-
-        $user->update([
-            'password' => Hash::make($data['password']),
-            'last_otp' => Hash::make(rand(1000, 9999)), // Reset OTP after use
-            'last_otp_expire' => Carbon::now(),
-        ]);
-
+    } catch (Exception $e) {
+        Log::error('Exception in forgotPassword: ' . $e->getMessage());
         return [
-            'status' => true,
-            'message' => 'Password reset successful',
-            'code' => 200,
+            'status' => false,
+            'message' => 'Unexpected error occurred.',
+            'code' => ApiResponseHelper::STATUS_INTERNAL_SERVER_ERROR,
         ];
     }
+}
+
+
+public function validateOtp(array $data): array
+{
+    $user = User::where('email', $data['email'])->first();
+
+    if (!$user) {
+        return [
+            'status' => false,
+            'message' => 'User not found',
+            'code' => 404,
+        ];
+    }
+
+    // Log for debugging
+    Log::info('Validating OTP for user: ' . $user->email . ', current time: ' . Carbon::now('Africa/Cairo') . ', expires at: ' . $user->last_otp_expire);
+
+    // Check if OTP is expired
+    if (Carbon::now('Africa/Cairo')->gt($user->last_otp_expire)) {
+        return [
+            'status' => false,
+            'message' => 'OTP has expired',
+            'code' => 400,
+        ];
+    }
+
+    // Check OTP validity
+    if (!Hash::check($data['otp'], $user->last_otp)) {
+        return [
+            'status' => false,
+            'message' => 'Invalid OTP',
+            'code' => 400,
+        ];
+    }
+
+    // Update email verification
+    $user->update([
+        'email_verified_at' => Carbon::now('Africa/Cairo'),
+    ]);
+
+    return [
+        'status' => true,
+        'message' => 'OTP is valid, you can now reset your password',
+        'code' => 200,
+    ];
+}
+
+public function resetPassword(array $data): array
+{
+    $user = User::where('email', $data['email'])->first();
+
+    if (!$user) {
+        return [
+            'status' => false,
+            'message' => 'User not found',
+            'code' => 404,
+        ];
+    }
+
+    // Log for debugging
+    Log::info('Resetting password for user: ' . $user->email . ', current time: ' . Carbon::now('Africa/Cairo') . ', expires at: ' . $user->last_otp_expire);
+
+    // Check if OTP is expired
+    if (Carbon::now('Africa/Cairo')->gt($user->last_otp_expire)) {
+        return [
+            'status' => false,
+            'message' => 'OTP has expired',
+            'code' => 400,
+        ];
+    }
+
+    // Check OTP validity
+    if (!Hash::check($data['otp'], $user->last_otp)) {
+        return [
+            'status' => false,
+            'message' => 'Invalid OTP',
+            'code' => 400,
+        ];
+    }
+
+    // Update password and invalidate OTP
+    $user->update([
+        'password' => Hash::make($data['password']),
+        'last_otp' => null, // Clear OTP instead of generating a new one
+        'last_otp_expire' => null, // Clear expiration
+    ]);
+
+    return [
+        'status' => true,
+        'message' => 'Password reset successful',
+        'code' => 200,
+    ];
+}
+
+
+
+
+
 }
