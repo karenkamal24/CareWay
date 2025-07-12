@@ -26,13 +26,7 @@ class TestResultController extends Controller
         return response()->json([
             'tests' => $testResults->map(fn($test) => [
                 'id' => $test->id,
-                'test_name' => $test->test_name,
-                'result' => $test->result,
-                'unit' => $test->unit,
-                'range' => $test->range,
-                'test_date' => $test->test_date,
                 'result_date' => $test->result_date,
-                'doctor' => optional($test->doctor)->name ?? 'N/A',
                 'pdf_url' => $this->generatePDF($test),
             ]),
         ]);
@@ -40,17 +34,17 @@ class TestResultController extends Controller
 
     public function generatePDF($record)
     {
-        
+
         $timestamp = strtotime($record->updated_at);
         $fileName = "Report_{$record->id}_{$timestamp}.pdf";
         $filePath = "pdf_reports/{$fileName}";
 
-       
+
         if (!Storage::disk('public')->exists('pdf_reports')) {
             Storage::disk('public')->makeDirectory('pdf_reports');
         }
 
-  
+
         $oldFiles = Storage::disk('public')->files('pdf_reports');
         foreach ($oldFiles as $file) {
             if (strpos($file, "Report_{$record->id}_") !== false && $file !== $filePath) {
@@ -58,7 +52,7 @@ class TestResultController extends Controller
             }
         }
 
-   
+
         if (Storage::disk('public')->exists($filePath)) {
             return asset("storage/{$filePath}");
         }
@@ -69,14 +63,14 @@ class TestResultController extends Controller
             'mode' => 'utf-8'
         ]);
 
-      
+
         $html = view('pdf.lab_report', compact('record'))->render();
         $mpdf->WriteHTML($html);
 
-   
+
         Storage::disk('public')->put($filePath, $mpdf->Output('', 'S'));
 
-      
+
         return asset("storage/{$filePath}");
     }
 }
