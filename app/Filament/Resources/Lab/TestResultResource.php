@@ -99,7 +99,7 @@ class TestResultResource extends Resource
                     ->default([]),
             ]),
 
-            TextInput::make('note')->required()->label('Comment'),
+            TextInput::make('note')->required()->label('Comment')  ->nullable(),
             TextInput::make('total_cost')->numeric()->nullable()->label('Total Cost'),
             TextInput::make('amount_paid')->numeric()->default(0)->label('Amount Paid'),
 
@@ -151,7 +151,7 @@ class TestResultResource extends Resource
                             )
                             : $query
                     ),
-    
+
                 Filter::make('doctor_name')
                     ->form([
                         TextInput::make('name')->label('Doctor Name'),
@@ -169,7 +169,7 @@ class TestResultResource extends Resource
                     ->label('Download PDF')
                     ->action(fn ($record) => static::generatePDF($record))
                     ->color('success'),
-    
+
                 Action::make('sendNotification')
                     ->label('Send Notification')
                     ->action(fn ($record) => static::sendNotification($record))
@@ -177,14 +177,14 @@ class TestResultResource extends Resource
                     ->visible(fn ($record) => $record->status === 'paid' && $record->test_status === 'completed'),
             ]);
     }
-    
+
     public static function sendNotification($record)
     {
         if ($record->status === 'paid' && $record->test_status === 'completed') {
             Notification::send($record->patient, new TestResultNotification($record));
         }
     }
-    
+
     public static function generatePDF($record)
     {
         $mpdf = new Mpdf([
@@ -216,6 +216,6 @@ class TestResultResource extends Resource
             'edit' => Pages\EditTestResult::route('/{record}/edit'),
         ];
     }
-    
-    
+
+
 }
