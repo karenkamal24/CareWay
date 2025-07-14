@@ -14,16 +14,17 @@ class OrdersStatsOverview extends BaseWidget
     {
         return Auth::check() && Gate::allows('viewOrdersStatsOverview', \App\Dashboard::class);
     }
+
     protected function getCards(): array
     {
         return [
-           
+
             Card::make('Total Orders', Order::count())
                 ->description('All orders placed')
                 ->color('primary')
                 ->icon('heroicon-o-shopping-cart'),
 
-          
+
             Card::make('Total Revenue', number_format(Order::where('status', 'delivered')->sum('total_price'), 2) . ' $')
                 ->description('Earnings from completed orders')
                 ->color('success')

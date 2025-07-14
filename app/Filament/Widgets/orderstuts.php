@@ -41,7 +41,7 @@ class orderstuts extends ChartWidget
 
     protected function getType(): string
     {
-        return 'doughnut'; 
+        return 'doughnut';
     }
     protected function getOptions(): array
     {
@@ -57,7 +57,7 @@ class orderstuts extends ChartWidget
     protected function getContainerAttributes(): array
     {
         return [
-            'style' => 'max-height: 200px;', // 🔹 تصغير ارتفاع الحاوية 
+            'style' => 'max-height: 200px;', // 🔹 تصغير ارتفاع الحاوية
         ];
     }
 }
