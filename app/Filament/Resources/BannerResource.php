@@ -34,7 +34,7 @@ class BannerResource extends Resource
                 ->columnSpanFull()
                 ->required(),
 
-            Toggle::make('is_active')->label('Active'),
+
         ]);
     }
 
@@ -45,12 +45,7 @@ class BannerResource extends Resource
                 ->getStateUsing(fn ($record) => asset('storage/' . $record->image))
                 ->size(50)
                 ->circular()
-                ->label('Image'),
-
-            IconColumn::make('is_active')
-                ->boolean()
-                ->label('Active'),
-        ])->defaultSort('id', 'desc');
+                ->label('Image')]);
     }
 
     public static function getRelations(): array
