@@ -1,12 +1,11 @@
 <?php
 
 namespace App\Http\Controllers\User\Pharmacy;
-use App\Models\Category;
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use App\Services\Pharmacy\CategoryService;
-use Illuminate\Http\JsonResponse;
+
 class CategoryController extends Controller
 {
     protected $categoryService;
@@ -16,13 +15,23 @@ class CategoryController extends Controller
         $this->categoryService = $categoryService;
     }
 
-    public function index()
+    // GET /categories/main
+    public function main()
     {
-        return $this->categoryService->getAllCategories();
+        return $this->categoryService->getMainCategories();
     }
 
-    public function show($id)
+    // GET /categories/{id}/subcategories
+    public function subcategories($id)
     {
-        return $this->categoryService->getCategoryById($id);
+        return $this->categoryService->getSubcategoriesByParent($id);
+    }
+
+    // GET /categories/{id}/products?subcategory_id=xx&limit=xx&page=xx
+    public function products(Request $request, $id)
+    {
+        $subcategoryId = $request->get('subcategory_id');
+        $perPage = $request->get('limit', 10); // default to 10
+        return $this->categoryService->getProductsByCategory($id, $subcategoryId, $perPage);
     }
 }

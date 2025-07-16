@@ -87,10 +87,11 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class,'forgotPassword']);
 Route::post('/validateOtpForPasswordReset', [AuthController::class, 'validateOtpForPasswordReset']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
-//category
+//categories
 Route::prefix('categories')->group(function () {
-    Route::get('/', [CategoryController::class, 'index']);
-    Route::get('/{id}', [CategoryController::class, 'show']);
+    Route::get('/main', [CategoryController::class, 'main']);
+    Route::get('/{id}/subcategories', [CategoryController::class, 'subcategories']);
+    Route::get('/{id}/products', [CategoryController::class, 'products']);
 });
 //Medicine
 Route::prefix('medicines')->group(function () {

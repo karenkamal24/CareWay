@@ -18,6 +18,7 @@
         "laravel/tinker": "^2.10.1",
         "livewire/livewire": "^3.6",
         "mpdf/mpdf": "8.2",
+        "nikic/php-parser": "^5.5",
         "phpmailer/phpmailer": "^6.9",
         "pusher/pusher-php-server": "^7.2"
     },

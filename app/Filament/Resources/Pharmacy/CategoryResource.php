@@ -12,6 +12,9 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Tables\Actions;
+use Filament\Forms\Components\Select;
+
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
@@ -23,26 +26,34 @@ class CategoryResource extends Resource
     protected static ?string $model = Category::class;
     protected static ?string $navigationGroup = 'Pharmacy Management';
 
-   
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap'; 
-    
 
-    public static function form(Form $form): Form
-    {
-        return $form
-            ->schema([
-                TextInput::make('name')
+    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+
+
+public static function form(Form $form): Form
+{
+    return $form
+        ->schema([
+            TextInput::make('name')
+                ->label('Category Name')
                 ->required()
                 ->maxLength(255),
-                FileUpload::make('image')
-                ->image()
-                ->directory('phramacy') 
-                ->imagePreviewHeight(height: '150') 
-                ->columnSpanFull(),
-            
 
-            ]);
-    }
+            Select::make('parent_id')
+                ->label('Parent Category')
+                ->relationship('parent', 'name')
+                ->searchable()
+                ->preload()
+                ->nullable(),
+
+            FileUpload::make('image')
+                ->image()
+                ->directory('phramacy')
+                ->imagePreviewHeight(height: '150')
+                ->columnSpanFull(),
+        ]);
+}
+
 
     public static function table(Table $table): Table
     {
@@ -50,10 +61,11 @@ class CategoryResource extends Resource
             ->columns([
                 TextColumn::make('id')->sortable(),
                 ImageColumn::make('image')
-                ->getStateUsing(fn ($record) => asset('storage/' . $record->image)) 
+                ->getStateUsing(fn ($record) => asset('storage/' . $record->image))
                 ->size(50)
                 ->circular(),
                 TextColumn::make('name')->label('Category Name')->sortable(),
+                TextColumn::make('parent.name')->label('Parent Category')->sortable(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -65,8 +77,6 @@ class CategoryResource extends Resource
                 ]),
             ]);
     }
-    
-
     public static function getRelations(): array
     {
         return [
@@ -82,5 +92,5 @@ class CategoryResource extends Resource
             'edit' => Pages\EditCategory::route('/{record}/edit'),
         ];
     }
-  
+
 }

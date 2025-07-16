@@ -199,8 +199,4 @@ return [
 
         'store' => 'default',
     ],
-    'defaults' => [
-    'guard' => 'doctor',
-],
-
 ];
