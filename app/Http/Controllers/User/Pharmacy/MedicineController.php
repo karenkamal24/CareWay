@@ -32,5 +32,17 @@ class MedicineController extends Controller
 
         return ApiResponseHelper::success('Medicine retrieved successfully', $medicine);
     }
+       public function latest()
+    {
+        $products = Product::orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Latest products retrieved successfully',
+            'data' => $products,
+        ]);
+    }
 
 }

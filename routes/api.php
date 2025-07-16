@@ -10,6 +10,7 @@ use App\Http\Controllers\User\Pharmacy\CartController;
 use App\Http\Controllers\User\NotificationController;
 use App\Http\Controllers\User\PaymentController;
 use Illuminate\Support\Facades\Http;
+use App\Http\Controllers\User\BannerController;
 
 use Intervention\Image\Facades\Image;
 use App\Http\Controllers\User\TestResultController;
@@ -97,6 +98,7 @@ Route::prefix('categories')->group(function () {
 Route::prefix('medicines')->group(function () {
     Route::get('/', [MedicineController::class, 'index']);
     Route::get('/{id}', [MedicineController::class, 'show']);
+    Route::get('/latest', [MedicineController::class, 'latest']);
 });
 Route::post('/paymob/webhook', [PaymentController::class, 'handleWebhook']);
 Route::post('/paymob/webhook', [AppointmentController::class, 'paymobWebhook']);
@@ -155,3 +157,6 @@ Route::post('/paymob/webhook', [AppointmentController::class, 'paymobWebhook']);
 //         ]);
 //     }
 // });
+
+
+Route::get('/banners', [BannerController::class, 'index']);
