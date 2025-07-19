@@ -34,7 +34,7 @@ class MedicineController extends Controller
     }
 public function latest()
 {
-    $products = \App\Models\Product::orderBy('created_at', 'desc')
+    $products = Product::orderBy('created_at', 'desc')
         ->take(10)
         ->get();
 
