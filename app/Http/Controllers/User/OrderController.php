@@ -15,6 +15,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Helpers\ApiResponseHelper;
 use App\Http\Requests\Pharmacy\Order\StoreCashOrderRequest;
+use App\Http\Requests\Pharmacy\Order\StoreOrderFromFlutterRequest;
+use Illuminate\Support\Facades\Log;
 
 use App\Services\Pharmacy\OrderService;
 
@@ -145,7 +147,7 @@ class OrderController extends Controller
                 $message .= ' | Details: ' . $errorDetails;
             }
 
-            return ApiResponseHelper::error($message, 400);  
+            return ApiResponseHelper::error($message, 400);
         }
 
         return ApiResponseHelper::success('Cash order created successfully!', [
@@ -248,5 +250,84 @@ class OrderController extends Controller
         $order->delete();
         return response()->json(['message' => 'Order deleted successfully'], 200);
     }
+
+    public function storeOrderCard(Request $request, DeliveryService $deliveryService)
+{
+    DB::beginTransaction();
+    try {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'User not authenticated!'], 401);
+        }
+
+        $cartItems = CartItem::whereHas('cart', fn($query) => $query->where('user_id', $user->id))->get();
+
+        if ($cartItems->isEmpty()) {
+            return response()->json(['error' => 'Cart is empty!'], 400);
+        }
+
+        // حساب التوصيل والإجمالي
+        $distanceKm = $deliveryService->getDistanceFromPharmacy($request->latitude, $request->longitude);
+        $deliveryFee = $deliveryService->calculateDeliveryFee($distanceKm);
+        $totalPrice = $cartItems->sum(fn($item) => $item->price * $item->quantity);
+        $finalPrice = $totalPrice + $deliveryFee;
+
+        // بيانات الشحن والفاتورة
+        $billingData = [
+            "first_name" => $request->first_name ?? '',
+            "last_name" => $request->last_name ?? '',
+            "email" => $request->email ?? '',
+            "phone_number" => $request->phone_number ?? '',
+            "city" => $request->city ?? '',
+            "country" => $request->country ?? '',
+            "street" => $request->street ?? '',
+            "building" => $request->building ?? '',
+            "floor" => $request->floor ?? '',
+            "apartment" => $request->apartment ?? '',
+        ];
+
+        $paymentState = $request->input('payment_state');
+
+        // إنشاء الطلب
+        $order = Order::create([
+            'user_id' => $user->id,
+            'name' => "{$billingData['first_name']} {$billingData['last_name']}",
+            'phone' => $billingData['phone_number'],
+            'address' => "{$billingData['street']}, {$billingData['building']}, {$billingData['floor']}, {$billingData['apartment']}, {$billingData['city']}, {$billingData['country']}",
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'total_price' => $finalPrice,
+            'payment_method' => 'card',
+            'status' => $paymentState === 'completed' ? 'confirmed' : 'failed',
+            'payment_state' => $paymentState,
+
+        ]);
+
+        // خصم الكمية من المنتجات
+        foreach ($cartItems as $cartItem) {
+            $medicine = Product::find($cartItem->medicine_id);
+            if ($medicine) {
+                $medicine->quantity -= $cartItem->quantity;
+                $medicine->save();
+            }
+        }
+
+        // حذف السلة
+        CartItem::whereHas('cart', fn($query) => $query->where('user_id', $user->id))->delete();
+
+        DB::commit();
+
+        return response()->json([
+            'message' => 'Order stored successfully',
+            'order_id' => $order->id,
+            'payment_state' => $paymentState,
+        ]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Order Store Error', ['error' => $e->getMessage()]);
+        return response()->json(['error' => 'Something went wrong'], 500);
+    }
+}
+
 
 }

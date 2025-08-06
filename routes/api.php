@@ -37,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function (){
     //order
     Route::prefix('order')->group(function () {
         Route::post('/cash', [OrderController::class, 'storeCashOrder']);
+         Route::post('/card', [OrderController::class, 'storeOrderCard']);
         Route::get('/{id}', [OrderController::class, 'show']);
         Route::get('/', [OrderController::class, 'index']);
         Route::delete('/{id}', [OrderController::class, 'delete']);
@@ -101,7 +102,7 @@ Route::prefix('medicines')->group(function () {
     Route::get('/latest', [MedicineController::class, 'latest']);
 });
 Route::post('/paymob/webhook', [PaymentController::class, 'handleWebhook']);
-Route::post('/paymob/webhook', [AppointmentController::class, 'paymobWebhook']);
+// Route::post('/paymob/webhook', [AppointmentController::class, 'paymobWebhook']);
 
 
 // Route::post('/ocr', function (Request $request) {

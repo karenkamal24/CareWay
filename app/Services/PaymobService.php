@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Log;
 
 class PaymobService
 {
-  
     protected $apiUrl = 'https://accept.paymob.com/api';
     protected $authToken;
 
@@ -17,10 +16,10 @@ class PaymobService
             Log::error('PAYMOB_API_KEY is missing in .env file.');
             return null;
         }
-    
+
         $response = Http::post("{$this->apiUrl}/auth/tokens", ['api_key' => $apiKey]);
         $data = $response->json();
-    
+
         if ($response->successful()) {
             Log::info('Paymob Authentication Response', ['response' => $data]);
             $this->authToken = $data['token'] ?? null; // ✅ حفظ التوكن داخل الكلاس
@@ -29,15 +28,15 @@ class PaymobService
             Log::error('Paymob Authentication Failed', ['response' => $data]);
             return null;
     }}
-    
-    
+
+
 
     public function createOrder($authToken, $amount, $currency = 'EGP')
     {
         $response = Http::post("{$this->apiUrl}/ecommerce/orders", [
             'auth_token' => $authToken,
             'delivery_needed' => false,
-            'amount_cents' => $amount * 100, 
+            'amount_cents' => $amount * 100,
             'currency' => $currency,
             'merchant_order_id' => uniqid(),
             'items' => []

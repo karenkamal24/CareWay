@@ -59,7 +59,7 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\Chart::class,
                 \App\Filament\Widgets\OrdersStatsOverview::class,
                 \App\Filament\Widgets\orderstuts::class,
-                \Filament\Notifications\Livewire\Notifications::class,
+                // \Filament\Notifications\Livewire\Notifications::class,
             ])
             ->middleware([
                 EncryptCookies::class,

@@ -35,14 +35,14 @@ class OrderShippedNotification extends Notification implements ShouldQueue
     public function toMail($notifiable)
     {
         Log::info("Sending email notification to: " . $notifiable->email);
-        
+
         return (new MailMessage)
             ->subject('Your Order Has Been Shipped!')
             ->greeting('Hello ' . $notifiable->name . ',')
             ->line('Your order #' . $this->order->id . ' has been shipped.')
             ->line('Thank you for shopping with us!');
     }
-    
+
     /**
      * بيانات الإشعار الموحدة
      */
@@ -72,10 +72,11 @@ class OrderShippedNotification extends Notification implements ShouldQueue
 
     public function broadcastOn()
     {
-        return ['private-orders.' . $this->order->id]; 
+        return ['private-orders.' . $this->order->id];
     }
 
     public function broadcastAs()
     {
         return 'order.shipped';
-    }}
+    }
+}
