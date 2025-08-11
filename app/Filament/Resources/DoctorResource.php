@@ -75,7 +75,6 @@ class DoctorResource extends Resource
                 FileUpload::make('image')
                     ->image()
                     ->directory('doctor')
-                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif', 'image/svg+xml'])
                     ->imagePreviewHeight(150)
                     ->columnSpanFull(),
 
