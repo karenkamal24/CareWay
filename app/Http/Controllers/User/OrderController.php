@@ -251,9 +251,10 @@ class OrderController extends Controller
         return response()->json(['message' => 'Order deleted successfully'], 200);
     }
 
-    public function storeOrderCard(Request $request, DeliveryService $deliveryService)
+public function storeOrderCard(Request $request, DeliveryService $deliveryService)
 {
     DB::beginTransaction();
+
     try {
         $user = Auth::user();
         if (!$user) {
@@ -264,6 +265,14 @@ class OrderController extends Controller
 
         if ($cartItems->isEmpty()) {
             return response()->json(['error' => 'Cart is empty!'], 400);
+        }
+
+        // ✅ تحقق ذكي من إحداثيات الموقع بعد التعديل
+        if (
+            !$request->filled('latitude') || !$request->filled('longitude') ||
+            !is_numeric($request->latitude) || !is_numeric($request->longitude)
+        ) {
+            return response()->json(['error' => 'Location coordinates are required.'], 422);
         }
 
         // حساب التوصيل والإجمالي
@@ -279,7 +288,6 @@ class OrderController extends Controller
             "email" => $request->email ?? '',
             "phone_number" => $request->phone_number ?? '',
             "city" => $request->city ?? '',
-            "country" => $request->country ?? '',
             "street" => $request->street ?? '',
             "building" => $request->building ?? '',
             "floor" => $request->floor ?? '',
@@ -293,14 +301,13 @@ class OrderController extends Controller
             'user_id' => $user->id,
             'name' => "{$billingData['first_name']} {$billingData['last_name']}",
             'phone' => $billingData['phone_number'],
-            'address' => "{$billingData['street']}, {$billingData['building']}, {$billingData['floor']}, {$billingData['apartment']}, {$billingData['city']}, {$billingData['country']}",
+            'address' => "{$billingData['street']}, {$billingData['building']}, {$billingData['floor']}, {$billingData['apartment']}, {$billingData['city']}",
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
             'total_price' => $finalPrice,
             'payment_method' => 'card',
             'status' => $paymentState === 'completed' ? 'confirmed' : 'failed',
             'payment_state' => $paymentState,
-
         ]);
 
         // خصم الكمية من المنتجات
@@ -328,6 +335,7 @@ class OrderController extends Controller
         return response()->json(['error' => 'Something went wrong'], 500);
     }
 }
+
 
 
 }

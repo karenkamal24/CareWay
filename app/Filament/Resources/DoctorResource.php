@@ -29,7 +29,7 @@ class DoctorResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-user';
     protected static ?string $navigationGroup = 'Hospital Management';
 
-    
+
     public static function form(Forms\Form $form): Forms\Form
     {
         return $form
@@ -71,6 +71,7 @@ class DoctorResource extends Resource
                 FileUpload::make('image')
                     ->image()
                     ->directory('doctor')
+                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif', 'image/svg+xml'])
                     ->imagePreviewHeight(150)
                     ->columnSpanFull(),
 
@@ -94,12 +95,12 @@ class DoctorResource extends Resource
                                 'Saturday' => 'Saturday',
                             ])
                             ->required(),
-                
+
                         TextInput::make('start_time')
                             ->label('Start Time')
                             ->type('time')
                             ->required(),
-                
+
                         TextInput::make('end_time')
                             ->label('End Time')
                             ->type('time')
@@ -112,8 +113,8 @@ class DoctorResource extends Resource
                             ])
                             ->default('clinic')
                             ->required(),
-                
-                      
+
+
                         Toggle::make('is_booked')
                             ->label('Is Booked')
                             ->default(false)
@@ -121,7 +122,7 @@ class DoctorResource extends Resource
                     ])
                     ->minItems(1)
                     ->maxItems(10),
-                
+
             ]);
     }
 
@@ -134,10 +135,10 @@ class DoctorResource extends Resource
                     ->searchable(),
 
                     ImageColumn::make('image')
-                    ->getStateUsing(fn ($record) => asset('storage/' . $record->image)) 
+                    ->getStateUsing(fn ($record) => asset('storage/' . $record->image))
                     ->size(50)
                     ->circular(),
-                    
+
                 TextColumn::make('name')
                     ->label('Name')
                     ->searchable(),
@@ -153,7 +154,7 @@ class DoctorResource extends Resource
                     ->label('Consultation Fee')
                     ->money('USD'),
 
-             
+
 
                 TextColumn::make('status')
                     ->label('Status')
@@ -195,7 +196,7 @@ public static function query(Builder $query): Builder
             'edit' => Pages\EditDoctor::route('/{record}/edit'),
         ];
     }
- 
 
-    
+
+
 }

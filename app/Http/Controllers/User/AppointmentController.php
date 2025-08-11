@@ -13,7 +13,9 @@ use App\Models\AvailableDoctor;
 use Illuminate\Support\Facades\Log;
 use App\Services\PaymobService;
 class AppointmentController extends Controller
-{protected $paymobService;
+{
+
+    protected $paymobService;
 
     public function __construct(PaymobService $paymobService)
     {

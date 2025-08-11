@@ -23,7 +23,7 @@ class Appointment extends Model
 
     ];
     protected $casts = [
-        'appointment_time' => 'datetime', 
+        'appointment_time' => 'datetime',
     ];
 
 
@@ -43,4 +43,5 @@ class Appointment extends Model
     {
         return $this->belongsTo(AvailableDoctor::class, 'available_doctor_id');
     }
+    
 }

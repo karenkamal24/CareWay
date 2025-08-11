@@ -12,12 +12,14 @@ use App\Http\Controllers\User\PaymentController;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\User\BannerController;
 
+
+
 use Intervention\Image\Facades\Image;
 use App\Http\Controllers\User\TestResultController;
 use App\Http\Controllers\User\OCRController;
-
-
 use App\Http\Controllers\User\DoctorController;
+
+use App\Http\Controllers\User\ChatController;
 use App\Http\Controllers\User\DepartmentController;
 use App\Http\Controllers\User\AppointmentController;
 Route::get('/user', function (Request $request) {
@@ -99,7 +101,7 @@ Route::prefix('categories')->group(function () {
 Route::prefix('medicines')->group(function () {
     Route::get('/', [MedicineController::class, 'index']);
     Route::get('/{id}', [MedicineController::class, 'show']);
-    Route::get('/latest', [MedicineController::class, 'latest']);
+
 });
 Route::post('/paymob/webhook', [PaymentController::class, 'handleWebhook']);
 // Route::post('/paymob/webhook', [AppointmentController::class, 'paymobWebhook']);
@@ -161,3 +163,13 @@ Route::post('/paymob/webhook', [PaymentController::class, 'handleWebhook']);
 
 
 Route::get('/banners', [BannerController::class, 'index']);
+
+
+// routes/api.php
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/chat/{appointment}', [ChatController::class, 'index']);
+    Route::post('/chat/send', [ChatController::class, 'send']);
+});
+
+Route::get('/latest', [MedicineController::class, 'latest']);
