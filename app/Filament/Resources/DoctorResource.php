@@ -67,6 +67,10 @@ class DoctorResource extends Resource
                     ->label('Consultation Fee')
                     ->numeric()
                     ->required(),
+                TextInput::make('degree')
+                    ->label('Degree')
+                    ->nullable(),
+
 
                 FileUpload::make('image')
                     ->image()
@@ -153,6 +157,10 @@ class DoctorResource extends Resource
                 TextColumn::make('price')
                     ->label('Consultation Fee')
                     ->money('USD'),
+
+                TextColumn::make('rate')
+                    ->label('Rate')
+                    ->formatStateUsing(fn ($state) => number_format($state, 1)),
 
 
 

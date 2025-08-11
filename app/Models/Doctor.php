@@ -13,9 +13,9 @@ class Doctor extends Authenticatable implements FilamentUser
 {
     use HasFactory, Notifiable, HasRoles;
 
-    protected $fillable = ['department_id', 'user_id', 'name',  'phone', 'description', 'specialization', 'price', 'image', 'status'];
+    protected $fillable = ['department_id', 'user_id', 'name',  'phone', 'description', 'specialization', 'price', 'image', 'status', 'degree', 'rate'];
 
-   
+
     protected $with = ['roles'];
 
 
@@ -34,9 +34,9 @@ class Doctor extends Authenticatable implements FilamentUser
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id'); 
+        return $this->belongsTo(User::class, 'user_id');
     }
-    
+
     public function testResults()
     {
         return $this->hasMany(TestResult::class, 'doctor_id');
@@ -51,8 +51,17 @@ class Doctor extends Authenticatable implements FilamentUser
     {
         return $this->hasRole('doctor');
     }
- 
-    
+public function reviews()
+{
+    return $this->hasMany(DoctorReview::class);
+}
+
+public function averageRate()
+{
+    return $this->reviews()->avg('rate') ?? 0;
+}
+
+
 
 
 }

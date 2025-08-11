@@ -11,6 +11,7 @@ use App\Http\Controllers\User\NotificationController;
 use App\Http\Controllers\User\PaymentController;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\User\BannerController;
+use App\Http\Controllers\User\DoctorReviewController;
 
 
 
@@ -72,6 +73,10 @@ Route::middleware('auth:sanctum')->group(function (){
         Route::put('/update/{id}', [AppointmentController::class, 'updateAppointment'])->name('appointments.update');
         Route::delete('/delete/{id}', [AppointmentController::class, 'deleteAppointment'])->name('appointments.delete');
     });
+    Route::prefix('reviews')->group(function () {
+    Route::post('/', [DoctorReviewController::class, 'store']);           // POST /api/reviews
+    Route::get('/{doctorId}', [DoctorReviewController::class, 'index']);  // GET /api/reviews/{doctorId}
+});
 
 
 
@@ -101,7 +106,6 @@ Route::prefix('categories')->group(function () {
 Route::prefix('medicines')->group(function () {
     Route::get('/', [MedicineController::class, 'index']);
     Route::get('/{id}', [MedicineController::class, 'show']);
-
 });
 Route::post('/paymob/webhook', [PaymentController::class, 'handleWebhook']);
 // Route::post('/paymob/webhook', [AppointmentController::class, 'paymobWebhook']);
