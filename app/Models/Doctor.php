@@ -61,7 +61,13 @@ public function averageRate()
     return $this->reviews()->avg('rate') ?? 0;
 }
 
-
+public function scopeDegree($query, $degree)
+{
+    if ($degree) {
+        return $query->where('degree', $degree);
+    }
+    return $query;
+}
 
 
 }
