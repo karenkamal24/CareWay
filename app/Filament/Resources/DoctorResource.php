@@ -72,12 +72,13 @@ class DoctorResource extends Resource
                     ->nullable(),
 
 
-                FileUpload::make('image')
-                    ->image()
-                    ->directory('doctor')
-                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif', 'image/svg+xml'])
-                    ->imagePreviewHeight(150)
-                    ->columnSpanFull(),
+         Forms\Components\FileUpload::make('image')
+    ->image()
+    ->directory('doctor')
+    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif', 'image/svg+xml'])
+    ->rules(['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp,svg', 'max:2048'])
+    ->imagePreviewHeight(150)
+    ->columnSpanFull(),
 
                 Toggle::make('status')
                     ->label('Active')
