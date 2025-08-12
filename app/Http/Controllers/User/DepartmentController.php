@@ -34,7 +34,7 @@ class DepartmentController extends Controller
      }
 
 
-   public function show(Request $request, $id)
+public function show(Request $request, $id)
 {
     try {
         $department = Department::find($id);
@@ -43,31 +43,34 @@ class DepartmentController extends Controller
             return response()->json(['error' => 'Department not found'], 404);
         }
 
-        // إضافة رابط الصورة للقسم
-        if ($department->image) {
-            $department->image_url = url('storage/' . $department->image);
-        } else {
-            $department->image_url = null;
-        }
+        $response = [
+            // عدّل هنا حسب اسم العمود الصحيح
+            'category' => $department->category ?? $department->name ?? null,
+        ];
 
-        // جلب الدكاتره المرتبطين بالقسم مع فلترة degree إذا طلبت
         $degreeFilter = $request->query('degree');
-
         $doctorsQuery = $department->doctors();
 
         if ($degreeFilter) {
             $doctorsQuery->where('degree', $degreeFilter);
         }
 
-        $doctors = $doctorsQuery->get();
+        // جلب اسم الدكتور مع الحقول المطلوبة
+        $doctors = $doctorsQuery->get(['id', 'name', 'degree', 'specialization', 'price', 'image', 'rate']);
 
-        // إضافة الدكاتره في البيانات المرسلة
-        $department->doctors = $doctors;
+        $doctors->transform(function ($doctor) {
+            $doctor->image_url = $doctor->image ? url('storage/' . $doctor->image) : null;
+            return $doctor;
+        });
 
-        return response()->json($department);
+        $response['doctors'] = $doctors;
+
+        return response()->json($response);
     } catch (\Exception $e) {
         return response()->json(['error' => 'An error occurred while fetching the department'], 500);
     }
 }
+
+
 
 }
