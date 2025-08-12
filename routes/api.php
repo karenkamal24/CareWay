@@ -65,6 +65,8 @@ Route::middleware('auth:sanctum')->group(function (){
     Route::prefix('departments')->group(function () {
         Route::get('/', [DepartmentController::class, 'index']);
         Route::get('/{id}', [DepartmentController::class, 'show']);
+        Route::get('/{id}/degrees', [DepartmentController::class,'getDegrees']);
+
     });
 
     Route::prefix('appointments')->middleware('auth')->group(function () {
