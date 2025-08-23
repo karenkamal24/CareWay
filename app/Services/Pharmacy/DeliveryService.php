@@ -9,17 +9,10 @@ class DeliveryService
 {
     /**
      * حساب المسافة بين نقطتين باستخدام قانون هافرساين
-     *
-     * @param float $lat1 إحداثيات خط العرض للنقطة الأولى
-     * @param float $lon1 إحداثيات خط الطول للنقطة الأولى
-     * @param float $lat2 إحداثيات خط العرض للنقطة الثانية
-     * @param float $lon2 إحداثيات خط الطول للنقطة الثانية
-     * @return float المسافة بالكيلومترات
      */
     public function calculateDistance($lat1, $lon1, $lat2, $lon2)
     {
-        $earthRadius = 6371; // نصف قطر الأرض بالكيلومترات
-
+        $earthRadius = 6371; // كيلومتر
         $dLat = deg2rad($lat2 - $lat1);
         $dLon = deg2rad($lon2 - $lon1);
 
@@ -29,14 +22,11 @@ class DeliveryService
 
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
-        return $earthRadius * $c; // المسافة بالكيلومترات
+        return $earthRadius * $c;
     }
 
     /**
-     * حساب تكلفة التوصيل بناءً على المسافة
-     *
-     * @param float $distanceKm المسافة بالكيلومترات
-     * @return float تكلفة التوصيل بالجنيه المصري
+     * حساب تكلفة التوصيل
      */
     public function calculateDeliveryFee($distanceKm)
     {
@@ -46,22 +36,17 @@ class DeliveryService
             throw new \Exception("Delivery settings not found!");
         }
 
-        $costPerKm = $settings->cost_per_km ?? 5.00;
-        $minimumFee = $settings->minimum_fee ?? 20.00;
-        $maximumFee = 200.00; // الحد الأقصى للتوصيل
+        $costPerKm = $settings->cost_per_km ?? 5.0;
+        $minimumFee = $settings->minimum_fee ?? 20.0;
+        $maximumFee = 200.0;
 
         $fee = ceil($distanceKm) * $costPerKm;
 
-        // التأكد من أن الرسوم بين الحد الأدنى والأقصى
         return min(max($fee, $minimumFee), $maximumFee);
     }
 
     /**
-     * حساب المسافة بين الصيدلية والمستخدم
-     *
-     * @param float $userLat إحداثيات خط العرض للمستخدم
-     * @param float $userLon إحداثيات خط الطول للمستخدم
-     * @return float المسافة بالكيلومترات
+     * المسافة بين الصيدلية والمستخدم
      */
     public function getDistanceFromPharmacy($userLat, $userLon)
     {
@@ -72,15 +57,45 @@ class DeliveryService
     }
 
     /**
-     * حساب تكلفة التوصيل بناءً على موقع المستخدم
-     *
-     * @param float $userLat إحداثيات خط العرض للمستخدم
-     * @param float $userLon إحداثيات خط الطول للمستخدم
-     * @return float تكلفة التوصيل بالجنيه المصري
+     * تكلفة التوصيل من الصيدلية
      */
     public function getDeliveryFeeFromPharmacy($userLat, $userLon)
     {
         $distanceKm = $this->getDistanceFromPharmacy($userLat, $userLon);
         return $this->calculateDeliveryFee($distanceKm);
+    }
+
+    /**
+     * التحقق من إمكانية التوصيل
+     */
+    public function checkDeliveryAvailability($userLat, $userLon)
+    {
+        $distanceKm = $this->getDistanceFromPharmacy($userLat, $userLon);
+
+        $settings = DeliverySetting::first();
+        if (!$settings) {
+            return [
+                'available' => false,
+                'message' => 'Delivery settings not found!',
+                'distance_km' => $distanceKm,
+                'delivery_fee' => 0,
+                'estimated_time' => null
+            ];
+        }
+
+        $maxDistance = $settings->max_distance_km ?? 20;
+        $deliveryFee = $this->calculateDeliveryFee($distanceKm);
+
+        $available = $distanceKm <= $maxDistance;
+        $message = $available ? 'Delivery available' : 'Delivery not available for your location';
+        $estimatedTime = ceil($distanceKm * 5); // مثال تقديري بالـ دقائق
+
+        return [
+            'available' => $available,
+            'message' => $message,
+            'distance_km' => $distanceKm,
+            'delivery_fee' => $deliveryFee,
+            'estimated_time' => $estimatedTime,
+        ];
     }
 }

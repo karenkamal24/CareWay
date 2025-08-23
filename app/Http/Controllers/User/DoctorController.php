@@ -24,11 +24,11 @@ class DoctorController extends Controller
             return response()->json(['error' => 'An error occurred while fetching doctors data'], 500);
         }
     }
-    
+
     public function show($id)
     {
         try {
-            
+
             $doctor = Doctor::with('availableAppointments')->find($id);
             if (!$doctor) {
                 return response()->json(['error' => 'Doctor not found'], 404);
@@ -39,7 +39,8 @@ class DoctorController extends Controller
             return response()->json(['error' => 'An error occurred while fetching doctor data'], 500);
         }
     }
+
     
-    
-    
+
+
 }

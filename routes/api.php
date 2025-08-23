@@ -40,7 +40,7 @@ Route::middleware('auth:sanctum')->group(function (){
     //order
     Route::prefix('order')->group(function () {
         Route::post('/cash', [OrderController::class, 'storeCashOrder']);
-         Route::post('/card', [OrderController::class, 'storeOrderCard']);
+         Route::post('/card', [OrderController::class, 'storeCardOrder']);
         Route::get('/{id}', [OrderController::class, 'show']);
         Route::get('/', [OrderController::class, 'index']);
         Route::delete('/{id}', [OrderController::class, 'delete']);
@@ -75,6 +75,8 @@ Route::middleware('auth:sanctum')->group(function (){
         Route::put('/update/{id}', [AppointmentController::class, 'updateAppointment'])->name('appointments.update');
         Route::delete('/delete/{id}', [AppointmentController::class, 'deleteAppointment'])->name('appointments.delete');
     });
+
+
     Route::prefix('reviews')->group(function () {
     Route::post('/', [DoctorReviewController::class, 'store']);           // POST /api/reviews
     Route::get('/{doctorId}', [DoctorReviewController::class, 'index']);  // GET /api/reviews/{doctorId}
