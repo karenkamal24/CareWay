@@ -112,15 +112,15 @@ class PrescriptionController extends Controller
         $name = preg_replace('/[^a-zA-Z0-9\s]+/', '', $name);
         return trim(preg_replace('/\s+/', ' ', $name));
     }
-  public function getByName(Request $request)
+public function getByName(Request $request)
 {
     $request->validate([
         'name' => 'required|string'
     ]);
 
-
+    // البحث باستخدام LIKE واختيار الأعمدة المطلوبة
     $product = Product::where('name', 'LIKE', "%{$request->name}%")
-                      ->select('name', 'image', 'price', 'quantity', 'active_ingredient')
+                      ->select('id', 'name', 'image', 'price', 'quantity', 'active_ingredient')
                       ->first();
 
     if (!$product) {
@@ -130,14 +130,15 @@ class PrescriptionController extends Controller
         ], 404);
     }
 
+    // تحويل الصورة لرابط كامل
     $product->image = $product->main_image_url;
 
-  
+    // جلب كل المنتجات بنفس active_ingredient مع الأعمدة المطلوبة
     $relatedProducts = Product::where('active_ingredient', $product->active_ingredient)
-                              ->select('name', 'image', 'price', 'quantity', 'active_ingredient')
+                              ->select('id', 'name', 'image', 'price', 'quantity', 'active_ingredient')
                               ->get();
 
-
+    // تحويل كل صورة لرابط كامل
     $relatedProducts->transform(function ($item) {
         $item->image = $item->main_image_url;
         return $item;
@@ -145,9 +146,11 @@ class PrescriptionController extends Controller
 
     return response()->json([
         'status' => true,
+        'message' => 'Product fetched successfully',
         'product' => $product,
         'related_products' => $relatedProducts
     ]);
 }
+
 
 }
