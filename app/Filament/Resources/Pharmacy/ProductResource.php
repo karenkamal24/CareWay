@@ -38,8 +38,8 @@ class ProductResource extends Resource
             ->schema([
                 Select::make('category_id')
                     ->label('Category')
-                    ->relationship('category', 'name') 
-                 
+                    ->relationship('category', 'name')
+
                     ->required(),
 
                 TextInput::make('name')
@@ -48,11 +48,11 @@ class ProductResource extends Resource
 
                 FileUpload::make('image')
                     ->image()
-                    ->directory('products') 
-                  
-                    ->imagePreviewHeight(height: '150') 
+                    ->directory('products')
+
+                    ->imagePreviewHeight(height: '150')
                     ->columnSpanFull(),
-                
+
 
                 Textarea::make('description')
                     ->maxLength(500),
@@ -67,7 +67,7 @@ class ProductResource extends Resource
                     ->required()
                     ->minValue(0),
 
-                        
+
                     Toggle::make('status') // ✅ زر التبديل الصحيح داخل الفورم
                     ->label('Active')
                     ->onColor('success')
@@ -83,11 +83,11 @@ class ProductResource extends Resource
                 TextColumn::make('id')->sortable(),
 
                 ImageColumn::make('image')
-                ->getStateUsing(fn ($record) => asset('storage/' . $record->image)) 
+                ->getStateUsing(fn ($record) => asset('storage/' . $record->image))
                 ->size(50)
                 ->circular(),
 
-                TextColumn::make('name')->sortable(),
+                TextColumn::make('name')->sortable() ->searchable(),
 
                 TextColumn::make('category.name')
                     ->label('Category')
@@ -99,7 +99,7 @@ class ProductResource extends Resource
                 TextColumn::make('quantity')
                     ->sortable(),
 
-                    ToggleColumn::make('status') 
+                    ToggleColumn::make('status')
                     ->label('Active')
                     ->onColor('success')
                     ->offColor('danger')

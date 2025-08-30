@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 class Product extends Model
 {
-    protected $fillable = [ 'category_id','name', 'image', 'description', 'price','quantity','status' ];
+    protected $fillable = [ 'category_id','name', 'image', 'description', 'price','quantity','status'  , 'active_ingredient',];
 
     public function category()
     {

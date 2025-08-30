@@ -12,7 +12,7 @@ use App\Http\Controllers\User\PaymentController;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\User\BannerController;
 use App\Http\Controllers\User\DoctorReviewController;
-
+use App\Http\Controllers\PrescriptionController;
 
 
 use Intervention\Image\Facades\Image;
@@ -181,3 +181,11 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::get('/latest', [MedicineController::class, 'latest']);
+
+use App\Http\Controllers\ProductImportController;
+
+Route::post('/import-products', [ProductImportController::class, 'import']);
+
+
+
+Route::post('/search-medicines', [PrescriptionController::class, 'searchMedicines']);
