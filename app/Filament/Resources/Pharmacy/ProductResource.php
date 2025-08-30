@@ -67,6 +67,10 @@ class ProductResource extends Resource
                     ->required()
                     ->minValue(0),
 
+                TextInput::make('active_ingredient')
+                    ->maxLength(255),
+                    
+
 
                     Toggle::make('status') // ✅ زر التبديل الصحيح داخل الفورم
                     ->label('Active')
