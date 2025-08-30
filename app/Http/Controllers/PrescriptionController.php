@@ -76,7 +76,7 @@ class PrescriptionController extends Controller
             $image = $product->image ? Storage::url($product->image) : null;
 
             return [
-                'id' => $product->id,          
+                'id' => $product->id,
                 'name' => $name,
                 'image' => $image,
                 'price' => $product->price,
@@ -112,4 +112,42 @@ class PrescriptionController extends Controller
         $name = preg_replace('/[^a-zA-Z0-9\s]+/', '', $name);
         return trim(preg_replace('/\s+/', ' ', $name));
     }
+  public function getByName(Request $request)
+{
+    $request->validate([
+        'name' => 'required|string'
+    ]);
+
+
+    $product = Product::where('name', 'LIKE', "%{$request->name}%")
+                      ->select('name', 'image', 'price', 'quantity', 'active_ingredient')
+                      ->first();
+
+    if (!$product) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Product not found'
+        ], 404);
+    }
+
+    $product->image = $product->main_image_url;
+
+  
+    $relatedProducts = Product::where('active_ingredient', $product->active_ingredient)
+                              ->select('name', 'image', 'price', 'quantity', 'active_ingredient')
+                              ->get();
+
+
+    $relatedProducts->transform(function ($item) {
+        $item->image = $item->main_image_url;
+        return $item;
+    });
+
+    return response()->json([
+        'status' => true,
+        'product' => $product,
+        'related_products' => $relatedProducts
+    ]);
+}
+
 }
