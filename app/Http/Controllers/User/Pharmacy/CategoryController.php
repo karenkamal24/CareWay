@@ -6,6 +6,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\Pharmacy\CategoryService;
 
+use App\Http\Resources\ProductResource;
+
+use App\Helpers\ApiResponseHelper;
+
+
 class CategoryController extends Controller
 {
     protected $categoryService;
@@ -28,10 +33,18 @@ class CategoryController extends Controller
     }
 
     // GET /categories/{id}/products?subcategory_id=xx&limit=xx&page=xx
-    public function products(Request $request, $id)
-    {
-        $subcategoryId = $request->get('subcategory_id');
-        $perPage = $request->get('limit', 10); // default to 10
-        return $this->categoryService->getProductsByCategory($id, $subcategoryId, $perPage);
-    }
+public function products(Request $request, $id)
+{
+    $subcategoryId = $request->get('subcategory_id');
+    $perPage = $request->get('limit', 10);
+
+    $products = $this->categoryService->getProductsByCategory($id, $subcategoryId, $perPage);
+
+    return ApiResponseHelper::paginated(
+        true,
+        'Products retrieved successfully',
+        $products,
+        ProductResource::class
+    );
+}
 }
