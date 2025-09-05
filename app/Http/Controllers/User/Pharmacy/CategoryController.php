@@ -40,11 +40,10 @@ public function products(Request $request, $id)
 
     $products = $this->categoryService->getProductsByCategory($id, $subcategoryId, $perPage);
 
-    return ApiResponseHelper::paginated(
+    return ApiResponseHelper::send(
         true,
         'Products retrieved successfully',
-        $products,
-        ProductResource::class
+        ProductResource::collection($products)
     );
 }
 }
