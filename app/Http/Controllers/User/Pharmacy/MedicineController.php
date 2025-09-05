@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 use App\Services\Pharmacy\MedicineService;
 use App\Helpers\ApiResponseHelper;
+use App\Http\Resources\ProductResource;
 class MedicineController extends Controller
 {
     protected MedicineService $medicineService;
@@ -15,23 +16,29 @@ class MedicineController extends Controller
         $this->medicineService = $medicineService;
     }
 
-    public function index()
-    {
-        $products = $this->medicineService->getAllMedicines();
+public function index()
+{
+    $products = $this->medicineService->getAllMedicines();
 
-        return ApiResponseHelper::success('Medicines retrieved successfully', $products);
+    return ApiResponseHelper::success(
+        'Medicines retrieved successfully',
+        ProductResource::collection($products)
+    );
+}
+
+public function show($id)
+{
+    $medicine = $this->medicineService->getMedicineById($id);
+
+    if (!$medicine) {
+        return ApiResponseHelper::notFound('Medicine not found');
     }
 
-    public function show($id)
-    {
-        $medicine = $this->medicineService->getMedicineById($id);
-
-        if (!$medicine) {
-            return ApiResponseHelper::notFound('Medicine not found');
-        }
-
-        return ApiResponseHelper::success('Medicine retrieved successfully', $medicine);
-    }
+    return ApiResponseHelper::success(
+        'Medicine retrieved successfully',
+        new ProductResource($medicine)
+    );
+}
 public function latest()
 {
     $products = Product::orderBy('created_at', 'desc')
@@ -41,17 +48,8 @@ public function latest()
     return response()->json([
         'status' => true,
         'message' => 'Latest products retrieved successfully',
-        'data' => $products->map(fn ($product) => [
-            'id' => $product->id,
-            'name' => $product->name,
-            'description' => $product->description,
-            'price' => $product->price,
-            'quantity' => $product->quantity,
-            'status' => $product->status,
-            'image_url' => $product->main_image_url, // 🔥 الرابط الكامل
-            'created_at' => $product->created_at,
-        ]),
-    ]);
+        'data' => ProductResource::collection($products),
+    ], 200, [], JSON_UNESCAPED_UNICODE);
 }
 
 

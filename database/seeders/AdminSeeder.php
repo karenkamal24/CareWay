@@ -13,7 +13,7 @@ class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-       
+
         $admin = User::updateOrCreate(
             ['email' => 'admin@gmail.com'],
             [
@@ -23,10 +23,10 @@ class AdminSeeder extends Seeder
             ]
         );
 
-        // 2. اسم الدور super_admin من Filament Shield
+
         $superAdminRoleName = Utils::getSuperAdminName(); // usually 'super_admin'
 
-        // 3. إنشاء الدور لو مش موجود
+
         $role = Role::firstOrCreate([
             'name' => $superAdminRoleName,
             'guard_name' => 'web',
