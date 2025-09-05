@@ -5,11 +5,8 @@ namespace App\Http\Controllers\User\Pharmacy;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\Pharmacy\CategoryService;
-
-use App\Http\Resources\ProductResource;
-
 use App\Helpers\ApiResponseHelper;
-
+use App\Http\Resources\ProductResource;
 
 class CategoryController extends Controller
 {
@@ -36,14 +33,7 @@ class CategoryController extends Controller
 public function products(Request $request, $id)
 {
     $subcategoryId = $request->get('subcategory_id');
-    $perPage = $request->get('limit', 10);
-
-    $products = $this->categoryService->getProductsByCategory($id, $subcategoryId, $perPage);
-
-    return ApiResponseHelper::send(
-        true,
-        'Products retrieved successfully',
-        ProductResource::collection($products)
-    );
+    return $this->categoryService->getProductsByCategory($id, $subcategoryId);
 }
+
 }

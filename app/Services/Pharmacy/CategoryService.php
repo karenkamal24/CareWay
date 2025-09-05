@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Storage;
 use App\Helpers\ApiResponseHelper;
+use App\Http\Resources\ProductResource;
 
 class CategoryService
 {
@@ -43,15 +44,21 @@ class CategoryService
         }
     }
 
-public function getProductsByCategory($id, $subcategoryId = null, $perPage = 10)
+public function getProductsByCategory($parentId, $subcategoryId = null)
 {
-    $query = Product::where('category_id', $id);
-
     if ($subcategoryId) {
-        $query->where('subcategory_id', $subcategoryId);
+        $categoryIds = [$subcategoryId];
+    } else {
+        $categoryIds = Category::where('parent_id', $parentId)->pluck('id')->toArray();
+        $categoryIds[] = $parentId;
     }
 
-    return $query->paginate($perPage);
+    $products = Product::whereIn('category_id', $categoryIds)->get();
+
+    $data = ProductResource::collection($products);
+
+    return ApiResponseHelper::success('Products retrieved successfully', $data);
 }
+
 
 }
