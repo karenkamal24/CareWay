@@ -24,7 +24,9 @@ class ProductResource extends JsonResource
                 'quantity' => $this->quantity,
                 'active_ingredient' => $this->active_ingredient,
                 'status' => $this->status,
-                'image' => $this->image ? Storage::url($this->image) : null,
+               'image' => $this->image
+                    ? url(Storage::url($this->image)) 
+                    : null,
             ]
         ];
     }
