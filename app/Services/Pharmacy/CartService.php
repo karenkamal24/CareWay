@@ -104,51 +104,38 @@ class CartService
         }
     }
 
-    public function getCart()
+public function getCart(): array
     {
-        if ($response = $this->checkAuth()) {
-            return $response;
-        }
+        $cart = Cart::firstOrCreate(
+            ['user_id' => Auth::id()],
+            []
+        );
 
-        try {
-            $cart = Cart::where('user_id', Auth::id())->first();
-
-            if (!$cart || $cart->items()->count() === 0) {
-                return [
-                    'success' => false,
-                    'message' => 'Cart is empty',
-                ];
-            }
-
-            $cartItems = $cart->items()->with('medicine')->get()->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'medicine_id' => $item->medicine_id,
-                    'name' => $item->medicine->name,
-                    'quantity' => $item->quantity,
-                    'price' => $item->price,
-                    'total_price' => $item->quantity * $item->price,
-                    'main_image_url' => $item->medicine->image ? url('storage/' . $item->medicine->image) : null,
-                ];
-            });
-
+        $cartItems = $cart->items()->with('medicine')->get()->map(function ($item) {
             return [
-                'success' => true,
-                'message' => 'Cart retrieved successfully.',
-                'data' => [
-                    'cart_id' => $cart->id,
-                    'items' => $cartItems,
-                    'total' => $cartItems->sum('total_price'),
-                ],
+                'id' => $item->id,
+                'medicine_id' => $item->medicine_id,
+                'name' => $item->medicine->name,
+                'quantity' => $item->quantity,
+                'price' => $item->price,
+                'total_price' => $item->quantity * $item->price,
+                'main_image_url' => $item->medicine->image ? url('storage/' . $item->medicine->image) : null,
             ];
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'message' => 'Something went wrong while fetching the cart.',
-                'error' => $e->getMessage(),
-            ];
-        }
+        });
+
+        return [
+            'success' => true,
+            'message' => 'Cart retrieved successfully.',
+            'data' => [
+                'cart_id' => $cart->id,
+                'items' => $cartItems,
+                'total' => $cartItems->sum('total_price'),
+            ],
+        ];
     }
+
+
+
 
 
     public function removeItem(int $cartItemId)
