@@ -29,4 +29,9 @@ class WidgetPolicy
     {
         return $user->hasPermissionTo('widget_orderstuts');
     }
+
+    public function viewLabStats(User $user)
+    {
+        return $user->hasPermissionTo('widget_LabStats');
+    }
 }
