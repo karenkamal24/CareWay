@@ -39,10 +39,6 @@ public function availableAppointments()
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function testResults()
-    {
-        return $this->hasMany(TestResult::class, 'doctor_id');
-    }
 
     public function scopeWithRoles(Builder $query): Builder
     {
@@ -69,6 +65,10 @@ public function scopeDegree($query, $degree)
         return $query->where('degree', $degree);
     }
     return $query;
+}
+public function testResults()
+{
+    return $this->hasMany(TestResult::class, 'doctor_id');
 }
 
 

@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\AppointmentResource\Pages;
 use App\Models\Appointment;
 use App\Models\Doctor;
+use App\Models\AvailableDoctor;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -17,7 +18,6 @@ use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Placeholder;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Actions\Action;
 
 class AppointmentResource extends Resource
 {
@@ -25,6 +25,9 @@ class AppointmentResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
     protected static ?string $navigationGroup = 'Hospital Management';
 
+    /**
+     * Filter appointments based on the logged-in user
+     */
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
@@ -34,6 +37,8 @@ class AppointmentResource extends Resource
             $doctor = Doctor::where('user_id', $user->id)->first();
             if ($doctor) {
                 return $query->where('doctor_id', $doctor->id);
+            } else {
+                return $query->whereRaw('0 = 1'); // فارغة إذا لا يوجد دكتور مرتبط
             }
         }
 
@@ -42,12 +47,12 @@ class AppointmentResource extends Resource
 
     protected static function isDoctorUser($user): bool
     {
-        if ($user->usertype === 'doctor') {
+        if ($user->user_type === 'doctor') {
             return true;
         }
 
-        if (method_exists($user, 'hasRole')) {
-            return $user->hasRole('doctor');
+        if (method_exists($user, 'hasRole') && $user->hasRole('doctor')) {
+            return true;
         }
 
         return Doctor::where('user_id', $user->id)->exists();
@@ -55,9 +60,6 @@ class AppointmentResource extends Resource
 
     public static function form(Form $form): Form
     {
-        $user = Auth::user();
-        $isDoctor = $user && self::isDoctorUser($user);
-
         return $form
             ->schema([
                 Select::make('user_id')
@@ -73,9 +75,14 @@ class AppointmentResource extends Resource
                 Placeholder::make('slot_details')
                     ->label('Slot Details')
                     ->content(function ($get) {
-                        $slot = \App\Models\AvailableDoctor::find($get('available_doctor_id'));
+                        $slot = AvailableDoctor::find($get('available_doctor_id'));
                         if ($slot) {
-                            return "{$slot->id}: {$slot->day} - {$slot->start_time} to {$slot->end_time} ({$slot->type})";
+                            $days = [
+                                0 => 'Sunday', 1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday',
+                                4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday'
+                            ];
+                            $dayName = $days[$slot->day_of_week] ?? 'Unknown';
+                            return "{$slot->id}: {$dayName} - {$slot->start_time} to {$slot->end_time} ({$slot->type})";
                         }
                         return 'Select a slot';
                     }),
@@ -120,10 +127,16 @@ class AppointmentResource extends Resource
                 TextColumn::make('slot_details')
                     ->label('Slot Details')
                     ->getStateUsing(function ($record) {
-                        $availableDoctor = \App\Models\AvailableDoctor::find($record->available_doctor_id);
-                        return $availableDoctor
-                            ? "{$record->available_doctor_id}: {$availableDoctor->day} - {$availableDoctor->start_time} to {$availableDoctor->end_time} ({$availableDoctor->type})"
-                            : 'Select a slot';
+                        $slot = AvailableDoctor::find($record->available_doctor_id);
+                        if ($slot) {
+                            $days = [
+                                0 => 'Sunday', 1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday',
+                                4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday'
+                            ];
+                            $dayName = $days[$slot->day_of_week] ?? 'Unknown';
+                            return "{$slot->id}: {$dayName} - {$slot->start_time} to {$slot->end_time} ({$slot->type})";
+                        }
+                        return 'Select a slot';
                     })
                     ->badge()
                     ->sortable(),
@@ -140,7 +153,6 @@ class AppointmentResource extends Resource
                         'canceled' => 'Canceled',
                     ]),
             ])
-
             ->searchable();
     }
 
@@ -155,7 +167,7 @@ class AppointmentResource extends Resource
             'index' => Pages\ListAppointments::route('/'),
             'create' => Pages\CreateAppointment::route('/create'),
             'edit' => Pages\EditAppointment::route('/{record}/edit'),
-            'chat' => Pages\Chat::route('/{record}/messages'), // Change to a unique path
+            'chat' => Pages\Chat::route('/{record}/messages'),
         ];
     }
 }

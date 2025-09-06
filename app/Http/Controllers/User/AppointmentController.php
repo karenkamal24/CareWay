@@ -48,7 +48,7 @@ public function storeAppointment(Request $request)
             'type'                => $availableDoctor->type,
             'day_of_week'         => $availableDoctor->day_of_week,
             'appointment_time'    => $availableDoctor->start_time,
-            'payment_status'      => 'unpaid',
+            'payment_state'      => 'unpaid',
             'amount'              => $doctor->price,
             'payment_method'      => 'cash',
         ]);

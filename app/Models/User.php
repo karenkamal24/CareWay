@@ -69,7 +69,7 @@ class User extends Authenticatable implements FilamentUser
             'updated_at' => 'datetime:Y-m-d H:i:s',
         ];
     }
- 
+
     public function canAccessPanel(Panel $panel): bool
 {
     if ($panel->getId() === 'admin') {
@@ -85,7 +85,8 @@ public function notifications()
 
 public function testResults()
 {
-    return $this->hasMany(TestResult::class, 'doctor_id');
+    return $this->hasMany(TestResult::class, 'patient_id');
 }
+
 
 }

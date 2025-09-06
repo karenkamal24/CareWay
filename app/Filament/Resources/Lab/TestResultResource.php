@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Lab;
 use Filament\Tables\Filters\Filter;
 use App\Filament\Resources\Lab\TestResultResource\Pages;
 use App\Models\TestResult;
+use App\Models\User;
+use App\Models\Doctor;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -15,14 +17,11 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Actions\Action;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Response;
-use Filament\Forms\Components\Repeater;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\TestResultNotification;
+use Illuminate\Support\Facades\Auth;
 
 class TestResultResource extends Resource
 {
@@ -30,112 +29,117 @@ class TestResultResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-clipboard';
     protected static ?string $navigationGroup = 'Lab Management';
 
+    /**
+     * Filter results based on logged-in user
+     */
+
     public static function form(Form $form): Form
     {
-        return $form->schema([
-            Select::make('patient_id')
-                ->relationship('patient', 'name')
-                ->required()
-                ->label('Patient')
-                ->reactive()
-                ->afterStateUpdated(function ($state, callable $set) {
-                    $patient = \App\Models\User::find($state);
-                    $set('patient_name', $patient?->name);
-                    $set('patient_email', $patient?->email);
-                }),
+        return $form
+            ->schema([
+                Select::make('patient_id')
+                    ->relationship('patient', 'name')
+                    ->required()
+                    ->label('Patient')
+                    ->reactive()
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        $patient = User::find($state);
+                        $set('patient_name', $patient?->name);
+                        $set('patient_email', $patient?->email);
+                    }),
 
-            Select::make('doctor_id')
-                ->relationship('doctor', 'name')
-                ->nullable()
-                ->label('Doctor')
-                ->reactive()
-                ->afterStateUpdated(function ($state, callable $set) {
-                    $doctor = \App\Models\Doctor::find($state);
-                    $set('doctor_name', $doctor?->name);
-                    $set('doctor_email', $doctor?->email);
-                }),
+                Select::make('doctor_id')
+                    ->relationship('doctor', 'name')
+                    ->default(fn() => optional(Doctor::where('user_id', Auth::id())->first())->id)
+                    ->disabled(fn() => Auth::user()->user_type === 'doctor')
+                    ->required()
+                    ->label('Doctor')
+                    ->reactive()
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        $doctor = Doctor::find($state);
+                        $set('doctor_name', $doctor?->name);
+                        $set('doctor_email', $doctor?->email);
+                    }),
 
-            TextInput::make('patient_name')->required()->label('Patient Name'),
-            TextInput::make('doctor_name')->required()->label('Doctor Name'),
-            TextInput::make('patient_email')->email()->nullable()->label('Patient Email'),
-            TextInput::make('age')->numeric()->nullable()->label('Age'),
-            TextInput::make('doctor_email')->email()->nullable()->label('Doctor Email'),
-            DatePicker::make('test_date')->required(),
-            DatePicker::make('result_date')->required(),
+                TextInput::make('patient_name')->required()->label('Patient Name'),
+                TextInput::make('doctor_name')->required()->label('Doctor Name'),
+                TextInput::make('patient_email')->email()->nullable()->label('Patient Email'),
+                TextInput::make('doctor_email')->email()->nullable()->label('Doctor Email'),
+                TextInput::make('age')->numeric()->nullable()->label('Age'),
+                DatePicker::make('test_date')->required(),
+                DatePicker::make('result_date')->required(),
 
-            Section::make('Test Details')->schema([
-                Repeater::make('tests')
-                    ->label('Tests')
-                    ->schema([
-                        TextInput::make('test')->label('Test Name')->required(),
-                        Repeater::make('results')
-                            ->label('Results')
-                            ->schema([
-                                TextInput::make('result')->label('Result')->required(),
-                                TextInput::make('unit')->label('Unit')->required(),
-                            ])
-                            ->addable()
-                            ->reorderable()
-                            ->deletable()
-                            ->columns(2)
-                            ->default([]),
+                Section::make('Test Details')->schema([
+                    Forms\Components\Repeater::make('tests')
+                        ->label('Tests')
+                        ->schema([
+                            TextInput::make('test')->label('Test Name')->required(),
+                            Forms\Components\Repeater::make('results')
+                                ->label('Results')
+                                ->schema([
+                                    TextInput::make('result')->label('Result')->required(),
+                                    TextInput::make('unit')->label('Unit')->required(),
+                                ])
+                                ->addable()
+                                ->reorderable()
+                                ->deletable()
+                                ->columns(2)
+                                ->default([]),
 
-                        Repeater::make('ranges')
-                            ->label('Ranges')
-                            ->schema([
-                                TextInput::make('test')->label('Test Name')->required(),
-                                TextInput::make('description')->label('Description')->nullable(),
-                            ])
-                            ->addable()
-                            ->reorderable()
-                            ->deletable()
-                            ->columns(2)
-                            ->default([]),
+                            Forms\Components\Repeater::make('ranges')
+                                ->label('Ranges')
+                                ->schema([
+                                    TextInput::make('test')->label('Test Name')->required(),
+                                    TextInput::make('description')->label('Description')->nullable(),
+                                ])
+                                ->addable()
+                                ->reorderable()
+                                ->deletable()
+                                ->columns(2)
+                                ->default([]),
+                        ])
+                        ->addable()
+                        ->reorderable()
+                        ->deletable()
+                        ->columns(1)
+                        ->default([]),
+                ]),
+
+                TextInput::make('note')->nullable()->label('Comment'),
+                TextInput::make('total_cost')->numeric()->nullable()->label('Total Cost'),
+                TextInput::make('amount_paid')->numeric()->default(0)->label('Amount Paid'),
+
+                Select::make('status')
+                    ->options([
+                        'unpaid' => 'Unpaid',
+                        'partial' => 'Partial',
+                        'paid' => 'Paid',
                     ])
-                    ->addable()
-                    ->reorderable()
-                    ->deletable()
-                    ->columns(1)
-                    ->default([]),
-            ]),
+                    ->default('unpaid')
+                    ->label('Payment Status'),
 
-            TextInput::make('note')->required()->label('Comment')  ->nullable(),
-            TextInput::make('total_cost')->numeric()->nullable()->label('Total Cost'),
-            TextInput::make('amount_paid')->numeric()->default(0)->label('Amount Paid'),
-
-            Select::make('status')
-                ->options([
-                    'unpaid' => 'Unpaid',
-                    'partial' => 'Partial',
-                    'paid' => 'Paid',
-                ])
-                ->default('unpaid')
-                ->label('Payment Status'),
-
-            Select::make('test_status')
-                ->label('Test Status')
-                ->options([
-                    'pending' => 'Pending',
-                    'completed' => 'Completed',
-                    'cancelled' => 'Cancelled',
-                ])
-                ->default('pending')
-                ->required(),
-        ]);
+                Select::make('test_status')
+                    ->label('Test Status')
+                    ->options([
+                        'pending' => 'Pending',
+                        'completed' => 'Completed',
+                        'cancelled' => 'Cancelled',
+                    ])
+                    ->default('pending')
+                    ->required(),
+            ]);
     }
-    public static function table(Tables\Table $table): Tables\Table
+
+    public static function table(Table $table): Table
     {
         return $table
             ->columns([
                 TextColumn::make('patient.name')->label('Patient')->searchable(),
                 TextColumn::make('patient_email')->label('Patient Email')->searchable(),
                 TextColumn::make('doctor.name')->label('Doctor')->searchable(),
-                TextColumn::make('doctor_email')->label('Doctor Email')->searchable(),
                 TextColumn::make('age')->label('Age'),
                 TextColumn::make('test_date')->label('Test Date')->date(),
                 TextColumn::make('result_date')->label('Result Date')->date(),
-                TextColumn::make('total_cost')->label('Total Cost')->money('USD'),
-                TextColumn::make('amount_paid')->label('Amount Paid')->money('USD'),
                 TextColumn::make('status')->label('Payment Status')->badge(),
                 TextColumn::make('test_status')->label('Test Status')->badge(),
             ])
@@ -159,7 +163,7 @@ class TestResultResource extends Resource
                     ->query(fn ($query, array $data) =>
                         isset($data['name']) && $data['name'] !== ''
                             ? $query->whereHas('doctor', fn ($q) =>
-                                $q->where('full_name', 'like', '%' . $data['name'] . '%')
+                                $q->where('name', 'like', '%' . $data['name'] . '%')
                             )
                             : $query
                     ),
@@ -216,6 +220,4 @@ class TestResultResource extends Resource
             'edit' => Pages\EditTestResult::route('/{record}/edit'),
         ];
     }
-
-
 }
