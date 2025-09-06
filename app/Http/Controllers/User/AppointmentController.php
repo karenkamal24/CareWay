@@ -137,6 +137,7 @@ public function show($id)
         'payment_status' => $appointment->payment_status,
         'amount' => $appointment->amount,
         'payment_method' => $appointment->payment_method,
+        'status' => $appointment->status,
         'created_at' => $appointment->created_at->format('Y-m-d '),
         'updated_at' => $appointment->updated_at->format('Y-m-d '),
     ];
@@ -145,6 +146,55 @@ public function show($id)
         'success' => true,
         'appointment' => $appointmentData
     ]);
+}
+
+public function cancel($id)
+{
+    $user = Auth::user();
+
+    $appointment = Appointment::where('user_id', $user->id)
+        ->where('id', $id)
+        ->first();
+
+    if (!$appointment) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Appointment not found or not authorized'
+        ], 404);
+    }
+
+    if ($appointment->status === 'canceled') {
+        return response()->json([
+            'success' => false,
+            'message' => 'Appointment already cancelled'
+        ], 400);
+    }
+
+    DB::beginTransaction();
+    try {
+        $appointment->status = 'canceled'; // صح حسب ENUM
+        $appointment->save();
+
+        if ($appointment->availableDoctor) {
+            $appointment->availableDoctor->decrement('booked_count');
+            $appointment->availableDoctor->is_booked = $appointment->availableDoctor->booked_count >= $appointment->availableDoctor->capacity;
+            $appointment->availableDoctor->save();
+        }
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Appointment cancelled successfully',
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
+    }
 }
 
 
