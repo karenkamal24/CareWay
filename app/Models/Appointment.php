@@ -40,10 +40,11 @@ class Appointment extends Model
     }
 
 
-    public function AvailableDoctor()
+   public function availableDoctor()
     {
         return $this->belongsTo(AvailableDoctor::class, 'available_doctor_id');
     }
+
 
 
 

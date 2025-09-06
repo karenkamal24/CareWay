@@ -22,12 +22,16 @@ class AppointmentController extends Controller
         $this->paymobService = $paymobService;
     }
 
-public function storeCashAppointment(Request $request)
+public function storeAppointment(Request $request)
 {
     DB::beginTransaction();
     try {
         $user = Auth::user();
         if (!$user) return response()->json(['error' => 'Authentication required'], 401);
+
+        $request->validate([
+            'available_doctor_id' => 'required|exists:available_doctors,id'
+        ]);
 
         $availableDoctor = AvailableDoctor::findOrFail($request->available_doctor_id);
 
@@ -35,31 +39,33 @@ public function storeCashAppointment(Request $request)
             return response()->json(['error' => 'No available slots!'], 400);
         }
 
-        $doctor = Doctor::findOrFail($availableDoctor->doctor_id);
+        $doctor = $availableDoctor->doctor;
 
         $appointment = Appointment::create([
             'user_id'             => $user->id,
             'doctor_id'           => $doctor->id,
             'available_doctor_id' => $availableDoctor->id,
             'type'                => $availableDoctor->type,
-            'appointment_time'    => $availableDoctor->start_time, // لو عايز تدمج اليوم والوقت ممكن تضيف day_of_week
-            'payment_status'      => 'cash',
+            'day_of_week'         => $availableDoctor->day_of_week,
+            'appointment_time'    => $availableDoctor->start_time,
+            'payment_status'      => 'unpaid',
             'amount'              => $doctor->price,
             'payment_method'      => 'cash',
         ]);
 
-        // تحديث booked_count و is_booked
+
         $availableDoctor->increment('booked_count');
         if ($availableDoctor->booked_count >= $availableDoctor->capacity) {
             $availableDoctor->is_booked = true;
-            $availableDoctor->save();
         }
+        $availableDoctor->save();
 
         DB::commit();
 
         return response()->json([
             'success' => true,
-            'message' => 'Appointment successfully booked! Please pay at the clinic.'
+            'message' => 'Appointment successfully booked! Please pay at the clinic.',
+            'appointment' => $appointment
         ]);
 
     } catch (\Exception $e) {
@@ -68,10 +74,84 @@ public function storeCashAppointment(Request $request)
     }
 }
 
+public function index()
+{
+    $user = Auth::user();
+
+    $appointments = Appointment::with(['doctor', 'availableDoctor'])
+        ->where('user_id', $user->id)
+        ->orderBy('appointment_time', 'desc')
+        ->get()
+        ->map(function ($appointment) {
+            return [
+                'id' => $appointment->id,
+                'doctor_name' => $appointment->doctor->name,
+                'doctor_specialization' => $appointment->doctor->specialization,
+                'doctor_image_url' => $appointment->doctor->image ? asset('storage/' . $appointment->doctor->image) : null,
+                'day_of_week' => $appointment->availableDoctor?->day_of_week_name ?? 'Unknown',
+                'start_time' => $appointment->availableDoctor?->start_time,
+                'end_time' => $appointment->availableDoctor?->end_time,
+                'payment_status' => $appointment->payment_status,
+                'amount' => $appointment->amount,
+                'payment_method' => $appointment->payment_method,
+            ];
+        });
+
+    return response()->json([
+        'success' => true,
+        'appointments' => $appointments
+    ]);
+}
 
 
 
-    // public function paymobWebhook(Request $request)
+
+
+
+    // Show single appointment details
+public function show($id)
+{
+    $user = Auth::user();
+
+    $appointment = Appointment::with(['doctor', 'availableDoctor'])
+        ->where('user_id', $user->id)
+        ->find($id);
+
+    if (!$appointment) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Appointment not found'
+        ], 404);
+    }
+
+    // Format the appointment details
+    $appointmentData = [
+        'id' => $appointment->id,
+        'doctor_name' => $appointment->doctor->name,
+        'doctor_specialization' => $appointment->doctor->specialization,
+        'doctor_image_url' => $appointment->doctor->image ? asset('storage/' . $appointment->doctor->image) : null,
+        'day_of_week' => $appointment->availableDoctor?->day_of_week_name ?? 'Unknown',
+        'start_time' => $appointment->availableDoctor?->start_time,
+        'end_time' => $appointment->availableDoctor?->end_time,
+        'type' => $appointment->type,
+        'payment_status' => $appointment->payment_status,
+        'amount' => $appointment->amount,
+        'payment_method' => $appointment->payment_method,
+        'created_at' => $appointment->created_at->format('Y-m-d '),
+        'updated_at' => $appointment->updated_at->format('Y-m-d '),
+    ];
+
+    return response()->json([
+        'success' => true,
+        'appointment' => $appointmentData
+    ]);
+}
+
+
+
+
+
+
     // {
     //     Log::info(' Paymob Webhook received', $request->all());
 

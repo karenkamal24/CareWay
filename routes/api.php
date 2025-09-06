@@ -70,8 +70,9 @@ Route::middleware('auth:sanctum')->group(function (){
     });
 
     Route::prefix('appointments')->middleware('auth')->group(function () {
-        Route::get('/', [AppointmentController::class, 'index'])->name('appointments.index');
-        Route::post('/store', [AppointmentController::class, 'storeCashAppointment'])->name('appointments.store');
+        Route::get('/', [AppointmentController::class, 'index']);
+        Route::post('/', [AppointmentController::class, 'storeAppointment']);
+        Route::get('/{id}', [AppointmentController::class, 'show']);
         Route::put('/update/{id}', [AppointmentController::class, 'updateAppointment'])->name('appointments.update');
         Route::delete('/delete/{id}', [AppointmentController::class, 'deleteAppointment'])->name('appointments.delete');
     });
