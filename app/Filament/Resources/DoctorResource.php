@@ -1,23 +1,21 @@
 <?php
 
 namespace App\Filament\Resources;
+
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\DoctorResource\Pages;
+use App\Filament\Resources\DoctorResource\RelationManagers\AvailableAppointmentsRelationManager;
 use App\Models\Doctor;
-use App\Models\AvailableDoctor;
 use Filament\Forms;
-use App\Models\User;
-
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Forms\Components\Repeater;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\DeleteAction;
@@ -28,7 +26,6 @@ class DoctorResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user';
     protected static ?string $navigationGroup = 'Hospital Management';
-
 
     public static function form(Forms\Form $form): Forms\Form
     {
@@ -67,67 +64,22 @@ class DoctorResource extends Resource
                     ->label('Consultation Fee')
                     ->numeric()
                     ->required(),
+
                 TextInput::make('degree')
                     ->label('Degree')
                     ->nullable(),
 
-
-         Forms\Components\FileUpload::make('image')
-    ->image()
-    ->directory('doctor')
-    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif', 'image/svg+xml'])
-    ->rules(['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp,svg', 'max:2048'])
-    ->imagePreviewHeight(150)
-    ->columnSpanFull(),
+                FileUpload::make('image')
+                    ->image()
+                    ->directory('doctor')
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif', 'image/svg+xml'])
+                    ->rules(['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp,svg', 'max:2048'])
+                    ->imagePreviewHeight(150)
+                    ->columnSpanFull(),
 
                 Toggle::make('status')
                     ->label('Active')
                     ->default(true),
-
-                    Repeater::make('AvailableDoctor')
-                    ->label('Available Schedule')
-                    ->relationship('availableAppointments')
-                    ->schema([
-                        Select::make('day')
-                            ->label('Day')
-                            ->options([
-                                'Sunday' => 'Sunday',
-                                'Monday' => 'Monday',
-                                'Tuesday' => 'Tuesday',
-                                'Wednesday' => 'Wednesday',
-                                'Thursday' => 'Thursday',
-                                'Friday' => 'Friday',
-                                'Saturday' => 'Saturday',
-                            ])
-                            ->required(),
-
-                        TextInput::make('start_time')
-                            ->label('Start Time')
-                            ->type('time')
-                            ->required(),
-
-                        TextInput::make('end_time')
-                            ->label('End Time')
-                            ->type('time')
-                            ->required(),
-                        Select::make('type')
-                            ->label('Appointment Type')
-                            ->options([
-                                'clinic' => 'Clinic',
-                                'online' => 'Online',
-                            ])
-                            ->default('clinic')
-                            ->required(),
-
-
-                        Toggle::make('is_booked')
-                            ->label('Is Booked')
-                            ->default(false)
-                            ->required(),
-                    ])
-                    ->minItems(1)
-                    ->maxItems(10),
-
             ]);
     }
 
@@ -139,7 +91,7 @@ class DoctorResource extends Resource
                     ->label('Email')
                     ->searchable(),
 
-                    ImageColumn::make('image')
+                ImageColumn::make('image')
                     ->getStateUsing(fn ($record) => asset('storage/' . $record->image))
                     ->size(50)
                     ->circular(),
@@ -163,12 +115,10 @@ class DoctorResource extends Resource
                     ->label('Rate')
                     ->formatStateUsing(fn ($state) => number_format($state, 1)),
 
-
-
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => $state === 'active' ? 'success' : 'danger'),
+                    ->color(fn ($state) => $state ? 'success' : 'danger'),
             ])
             ->filters([
                 SelectFilter::make('department')
@@ -182,19 +132,9 @@ class DoctorResource extends Resource
             ->defaultSort('name');
     }
 
-
-
-public static function query(Builder $query): Builder
-{
-    return $query->with('roles');
-}
-
-
-    public static function getRelations(): array
+    public static function query(Builder $query): Builder
     {
-        return [
-            //
-        ];
+        return $query->with('roles');
     }
 
     public static function getPages(): array
@@ -206,6 +146,10 @@ public static function query(Builder $query): Builder
         ];
     }
 
-
-
+    public static function getRelations(): array
+    {
+        return [
+            AvailableAppointmentsRelationManager::class,
+        ];
+    }
 }

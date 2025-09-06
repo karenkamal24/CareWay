@@ -27,10 +27,12 @@ class Doctor extends Authenticatable implements FilamentUser
         return $this->belongsTo(Department::class);
     }
 
-    public function availableAppointments()
-    {
-        return $this->hasMany(AvailableDoctor::class);
-    }
+public function availableAppointments()
+{
+    return $this->hasMany(\App\Models\AvailableDoctor::class, 'doctor_id');
+}
+
+
 
     public function user()
     {

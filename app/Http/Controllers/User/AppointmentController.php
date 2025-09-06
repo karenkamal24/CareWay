@@ -22,102 +22,53 @@ class AppointmentController extends Controller
         $this->paymobService = $paymobService;
     }
 
-    public function storeAppointment(Request $request)
-    {
-        DB::beginTransaction();
-        try {
-            Log::info('New appointment request', $request->all());
+public function storeCashAppointment(Request $request)
+{
+    DB::beginTransaction();
+    try {
+        $user = Auth::user();
+        if (!$user) return response()->json(['error' => 'Authentication required'], 401);
 
-            $user = Auth::user();
-            if (!$user) {
-                Log::error('Booking failed: User not authenticated');
-                return response()->json(['error' => 'Authentication required'], 401);
-            }
+        $availableDoctor = AvailableDoctor::findOrFail($request->available_doctor_id);
 
-            $availableDoctor = AvailableDoctor::findOrFail($request->available_doctor_id);
-            if ($availableDoctor->is_booked) {
-                Log::warning('Appointment already booked!', ['available_doctor_id' => $availableDoctor->id]);
-                return response()->json(['error' => 'Appointment already booked!'], 400);
-            }
+        if ($availableDoctor->booked_count >= $availableDoctor->capacity) {
+            return response()->json(['error' => 'No available slots!'], 400);
+        }
 
-            $doctor = Doctor::findOrFail($availableDoctor->doctor_id);
-            $amount = $doctor->price;
-            $type = $availableDoctor->type;
+        $doctor = Doctor::findOrFail($availableDoctor->doctor_id);
 
-            $paymentMethod = $request->has('pay_with_card') ? 'card' : 'cash';
+        $appointment = Appointment::create([
+            'user_id'             => $user->id,
+            'doctor_id'           => $doctor->id,
+            'available_doctor_id' => $availableDoctor->id,
+            'type'                => $availableDoctor->type,
+            'appointment_time'    => $availableDoctor->start_time, // لو عايز تدمج اليوم والوقت ممكن تضيف day_of_week
+            'payment_status'      => 'cash',
+            'amount'              => $doctor->price,
+            'payment_method'      => 'cash',
+        ]);
 
-
-            if ($type === 'online' && $paymentMethod !== 'card') {
-                return response()->json(['error' => 'Online appointments must be paid by card.'], 422);
-            }
-
-            $appointment = Appointment::create([
-                'user_id' => $user->id,
-                'doctor_id' => $doctor->id,
-                'available_doctor_id' => $availableDoctor->id,
-                'type' => $type,
-                'appointment_time' => $availableDoctor->day . ' ' . $availableDoctor->start_time,
-                'payment_status' => ($paymentMethod == 'card') ? 'pending' : 'cash',
-                'amount' => $amount,
-                'payment_method' => $paymentMethod,
-            ]);
-
+        // تحديث booked_count و is_booked
+        $availableDoctor->increment('booked_count');
+        if ($availableDoctor->booked_count >= $availableDoctor->capacity) {
             $availableDoctor->is_booked = true;
             $availableDoctor->save();
-
-            Log::info('Appointment successfully created', ['appointment_id' => $appointment->id]);
-
-            if ($paymentMethod == 'card') {
-                $authToken = $this->paymobService->authenticate();
-                if (!$authToken) {
-                    throw new \Exception('Failed to retrieve Paymob auth token');
-                }
-
-                $paymobOrderId = $this->paymobService->createOrder($authToken, $amount);
-                if (!$paymobOrderId) {
-                    throw new \Exception('Failed to create Paymob order');
-                }
-
-                $paymentToken = $this->paymobService->getPaymentKey($authToken, $paymobOrderId, $amount, $request->billing_data);
-                if (!$paymentToken) {
-                    throw new \Exception('Failed to get Paymob payment key');
-                }
-
-                $appointment->paymob_order_id = $paymobOrderId;
-                $appointment->save();
-
-                Log::info('Paymob payment request created', ['paymob_order_id' => $paymobOrderId, 'payment_token' => $paymentToken]);
-
-                DB::commit();
-
-                $iframeId = env('PAYMOB_IFRAME_ID');
-                if (!$iframeId) {
-                    throw new \Exception('PAYMOB_IFRAME_ID is missing in .env');
-                }
-
-                $iframeUrl = "https://accept.paymob.com/api/acceptance/iframes/{$iframeId}?payment_token={$paymentToken}";
-                Log::info('Redirecting to Paymob Iframe', ['url' => $iframeUrl]);
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Appointment created successfully, please complete the payment.',
-                    'payment_url' => $iframeUrl,
-                    'paymob_order_id' => $paymobOrderId,
-                ]);
-            }
-
-            DB::commit();
-            return response()->json([
-                'success' => true,
-                'message' => 'Appointment successfully booked! Please pay at the clinic.'
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Booking failed', ['error' => $e->getMessage()]);
-            return response()->json(['error' => $e->getMessage()], 500);
         }
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Appointment successfully booked! Please pay at the clinic.'
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json(['error' => $e->getMessage()], 500);
     }
+}
+
+
 
 
     // public function paymobWebhook(Request $request)
