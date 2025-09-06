@@ -14,10 +14,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Tables\Columns\TextColumn;
-use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
+use Illuminate\Support\Facades\Auth;
 
 class AppointmentResource extends Resource
 {
@@ -25,9 +26,6 @@ class AppointmentResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
     protected static ?string $navigationGroup = 'Hospital Management';
 
-    /**
-     * Filter appointments based on the logged-in user
-     */
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
@@ -77,11 +75,7 @@ class AppointmentResource extends Resource
                     ->content(function ($get) {
                         $slot = AvailableDoctor::find($get('available_doctor_id'));
                         if ($slot) {
-                            $days = [
-                                0 => 'Sunday', 1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday',
-                                4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday'
-                            ];
-                            $dayName = $days[$slot->day_of_week] ?? 'Unknown';
+                            $dayName = $slot->day_of_week ?: '-';
                             return "{$slot->id}: {$dayName} - {$slot->start_time} to {$slot->end_time} ({$slot->type})";
                         }
                         return 'Select a slot';
@@ -121,26 +115,21 @@ class AppointmentResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('user.name')->label('Patient'),
-                TextColumn::make('doctor.name')->label('Doctor'),
-                TextColumn::make('appointment_time')->dateTime(),
-                TextColumn::make('slot_details')
+                Tables\Columns\TextColumn::make('user.name')->label('Patient'),
+                Tables\Columns\TextColumn::make('doctor.name')->label('Doctor'),
+                Tables\Columns\TextColumn::make('appointment_time')->dateTime(),
+                Tables\Columns\TextColumn::make('slot_details')
                     ->label('Slot Details')
                     ->getStateUsing(function ($record) {
                         $slot = AvailableDoctor::find($record->available_doctor_id);
                         if ($slot) {
-                            $days = [
-                                0 => 'Sunday', 1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday',
-                                4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday'
-                            ];
-                            $dayName = $days[$slot->day_of_week] ?? 'Unknown';
+                            $dayName = $slot->day_of_week ?: '-';
                             return "{$slot->id}: {$dayName} - {$slot->start_time} to {$slot->end_time} ({$slot->type})";
                         }
-                        return 'Select a slot';
+                        return '-';
                     })
-                    ->badge()
                     ->sortable(),
-                TextColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
                     ->sortable(),
@@ -152,6 +141,21 @@ class AppointmentResource extends Resource
                         'completed' => 'Completed',
                         'canceled' => 'Canceled',
                     ]),
+
+                Filter::make('appointment_date')
+                    ->label('Appointment Date')
+                    ->form([
+                        DatePicker::make('from')->label('From'),
+                        DatePicker::make('until')->label('Until'),
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        if (!empty($data['from'])) {
+                            $query->whereDate('appointment_time', '>=', $data['from']);
+                        }
+                        if (!empty($data['until'])) {
+                            $query->whereDate('appointment_time', '<=', $data['until']);
+                        }
+                    }),
             ])
             ->searchable();
     }
