@@ -200,38 +200,40 @@ class OrderController extends Controller
         ]);
     }
 
-    public function index()
-    {
-        // التحقق من أن المستخدم مسجل دخوله
-        $user = Auth::user();
-        if (!$user) {
-            return response()->json(['error' => 'User not authenticated!'], 401);
-        }
-
-        $orders = Order::with(['orderItems.medicine'])->get();
-
-        $ordersData = $orders->map(function ($order) {
-            return [
-                'id' => $order->id,
-                'name' => $order->name,
-                'phone' => $order->phone,
-                'address' => $order->address,
-                'total_price' => $order->total_price,
-                'payment_method' => $order->payment_method,
-                'status' => $order->status,
-                'created_at' => $order->created_at->format('Y-m-d H:i:s'),
-                'order_items' => $order->orderItems->map(function ($item) {
-                    return [
-                        'medicine_id' => $item->medicine_id,
-                        'name' => $item->medicine->name, // عرض اسم الدواء
-                        'image' => asset('storage/products/' . $item->medicine->image), // رابط الصورة
-                    ];
-                }),
-            ];
-        });
-
-        return response()->json($ordersData);
+public function index()
+{
+    $user = Auth::user();
+    if (!$user) {
+        return response()->json(['error' => 'User not authenticated!'], 401);
     }
+
+    
+    $orders = Order::with(['orderItems.medicine'])
+        ->where('user_id', $user->id)
+        ->get();
+
+    $ordersData = $orders->map(function ($order) {
+        return [
+            'id' => $order->id,
+            'name' => $order->name,
+            'phone' => $order->phone,
+            'address' => $order->address,
+            'total_price' => $order->total_price,
+            'payment_method' => $order->payment_method,
+            'status' => $order->status,
+            'created_at' => $order->created_at->format('Y-m-d H:i:s'),
+            'order_items' => $order->orderItems->map(function ($item) {
+                return [
+                    'medicine_id' => $item->medicine_id,
+                    'name' => $item->medicine->name,
+                    'image' => asset('storage/products/' . $item->medicine->image),
+                ];
+            }),
+        ];
+    });
+
+    return response()->json($ordersData);
+}
 
     public function delete($id)
     {
