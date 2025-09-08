@@ -42,12 +42,7 @@ class CartService
                 ->where('medicine_id', $medicineId)
                 ->first();
 
-            if ($existingItem) {
-                return [
-                    'success' => false,
-                    'message' => 'Item already exists in cart.',
-                ];
-            }
+     
 
             $cartItem = CartItem::create([
                 'cart_id' => $cart->id,
