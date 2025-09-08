@@ -190,3 +190,7 @@ Route::post('/import-products', [ProductImportController::class, 'import']);
 
 Route::post('/search-medicines', [PrescriptionController::class, 'searchMedicines']);
 Route::get('/products/by-name', [PrescriptionController::class, 'getByName']);
+
+Route::get('/processing', function () {
+    return view('processing');
+})->name('processing');

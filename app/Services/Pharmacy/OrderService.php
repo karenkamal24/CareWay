@@ -133,7 +133,6 @@ public function storeCardOrder(array $data, DeliveryService $deliveryService): a
             return ['success' => false, 'message' => 'Cart is empty!'];
         }
 
-        // حساب المسافة والتوصيل
         $distanceKm = $deliveryService->getDistanceFromPharmacy($data['latitude'], $data['longitude']);
         $deliveryFee = $deliveryService->calculateDeliveryFee($distanceKm);
         $subtotal = $cartItems->sum(fn($item) => $item->price * $item->quantity);

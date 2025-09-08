@@ -34,3 +34,4 @@ Route::get('/test-notification', function () {
 
     return 'تم إرسال الإشعار!';
 });
+Route::view('/processing', 'processing')->name('processing');
