@@ -24,4 +24,25 @@ class HealthStatisticController extends Controller
             'data' => $statistics
         ]);
     }
+ public function indexMedicalArticles()
+{
+    $articles = $this->homepageService->getAll();
+
+    return response()->json([
+        'status'  => 'success',
+        'message' => 'Medical Articles fetched successfully',
+        'data'    => $articles,
+    ]);
+}
+
+  public function indexGallery()
+    {
+        $images = $this->homepageService->getAllGalleryImage();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Gallery images fetched successfully',
+            'data'    => $images,
+        ]);
+    }
 }

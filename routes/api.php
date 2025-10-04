@@ -194,14 +194,17 @@ Route::post('/import-products', [ProductImportController::class, 'import']);
 Route::post('/search-medicines', [PrescriptionController::class, 'searchMedicines']);
 Route::get('/products/by-name', [PrescriptionController::class, 'getByName']);
 
-
-Route::get('/health-statistics', [HealthStatisticController::class, 'index']);
+//home page
     Route::prefix('departments')->group(function () {
         Route::get('/', [DepartmentController::class, 'index']);
         Route::get('/{id}', [DepartmentController::class, 'show']);
         Route::get('/{id}/degrees', [DepartmentController::class,'getDegrees']);
 
     });
+Route::get('/health-statistics', [HealthStatisticController::class, 'index']);
+Route::get('/medical-articles', [HealthStatisticController::class, 'indexMedicalArticles']);
+Route::get('/gallery', [HealthStatisticController::class, 'indexGallery']);
+
 // Route::get('/processing', function () {
 //     return view('processing');
 // })->name('processing');
