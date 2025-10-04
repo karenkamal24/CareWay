@@ -19,19 +19,19 @@ class OrdersStatsOverview extends BaseWidget
     {
         return [
 
-            Card::make('Total Orders', Order::count())
+            Card::make('Total Orders(pharmacy)', Order::count())
                 ->description('All orders placed')
                 ->color('primary')
                 ->icon('heroicon-o-shopping-cart'),
 
 
-            Card::make('Total Revenue', number_format(Order::where('status', 'delivered')->sum('total_price'), 2) . ' EGP')
+            Card::make('Total Revenue(pharmacy)', number_format(Order::where('status', 'delivered')->sum('total_price'), 2) . ' EGP')
                 ->description('Earnings from completed orders')
                 ->color('success')
                 ->icon('heroicon-o-banknotes'),
 
-            // عدد المستخدمين الفريدين الذين طلبوا
-            Card::make('Total Customers', Order::distinct('user_id')->count())
+
+            Card::make('Total Customers(pharmacy)', Order::distinct('user_id')->count())
                 ->description('Unique customers who placed orders')
                 ->color('info')
                 ->icon('heroicon-o-user-group'),

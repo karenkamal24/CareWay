@@ -28,4 +28,8 @@ class DashboardPolicy
     {
         return $user->hasPermissionTo('widget_orderstuts');
     }
+    public function viewLabStats(User $user): bool
+    {
+        return $user->hasPermissionTo('widget_LabStats');
+    }
 }

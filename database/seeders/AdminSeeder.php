@@ -32,14 +32,16 @@ class AdminSeeder extends Seeder
             'guard_name' => 'web',
         ]);
 
-        // 4. ربط الدور بالمستخدم
+
         $admin->assignRole($role);
 
-        // 5. إنشاء صلاحيات الـ Widgets يدويًا
+
         $widgetPermissions = [
             'widget_OrdersStatsOverview',
             'view_chart',
             'widget_orderstuts',
+             'widget_LabStats',
+
         ];
 
         foreach ($widgetPermissions as $permissionName) {
@@ -49,7 +51,7 @@ class AdminSeeder extends Seeder
             ]);
         }
 
-        // 6. إعطاء صلاحيات الـ widgets للمستخدم admin
+
         $admin->givePermissionTo($widgetPermissions);
     }
 }

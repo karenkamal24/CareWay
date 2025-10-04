@@ -10,6 +10,7 @@ use App\Http\Controllers\User\Pharmacy\CartController;
 use App\Http\Controllers\User\NotificationController;
 use App\Http\Controllers\User\PaymentController;
 use Illuminate\Support\Facades\Http;
+use App\Http\Controllers\HealthStatisticController;
 use App\Http\Controllers\User\BannerController;
 use App\Http\Controllers\User\DoctorReviewController;
 use App\Http\Controllers\PrescriptionController;
@@ -78,8 +79,8 @@ Route::middleware('auth:sanctum')->group(function (){
 
 
     Route::prefix('reviews')->group(function () {
-    Route::post('/', [DoctorReviewController::class, 'store']);           // POST /api/reviews
-    Route::get('/{doctorId}', [DoctorReviewController::class, 'index']);  // GET /api/reviews/{doctorId}
+    Route::post('/', [DoctorReviewController::class, 'store']);
+    Route::get('/{doctorId}', [DoctorReviewController::class, 'index']);
 });
 
 
@@ -188,9 +189,19 @@ Route::post('/import-products', [ProductImportController::class, 'import']);
 
 
 
+
+
 Route::post('/search-medicines', [PrescriptionController::class, 'searchMedicines']);
 Route::get('/products/by-name', [PrescriptionController::class, 'getByName']);
 
-Route::get('/processing', function () {
-    return view('processing');
-})->name('processing');
+
+Route::get('/health-statistics', [HealthStatisticController::class, 'index']);
+    Route::prefix('departments')->group(function () {
+        Route::get('/', [DepartmentController::class, 'index']);
+        Route::get('/{id}', [DepartmentController::class, 'show']);
+        Route::get('/{id}/degrees', [DepartmentController::class,'getDegrees']);
+
+    });
+// Route::get('/processing', function () {
+//     return view('processing');
+// })->name('processing');

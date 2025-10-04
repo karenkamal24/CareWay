@@ -12,6 +12,7 @@ use App\Policies\CategoryPolicy;
 use App\Policies\ProductPolicy;
 use App\Models\Category;
 use BezhanSalleh\FilamentShield\Facades\FilamentShield;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -32,7 +33,7 @@ class AppServiceProvider extends ServiceProvider
         // });
 
         Gate::policy(Dashboard::class,DashboardPolicy::class);
-
+   
     Gate::policy(Category::class, CategoryPolicy::class);
       Gate::policy(Product::class, ProductPolicy::class);
     }

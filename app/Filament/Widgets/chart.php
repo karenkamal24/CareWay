@@ -20,14 +20,14 @@ class Chart extends ChartWidget
     }
     protected static ?string $heading = 'Orders Per Year';
 
-    protected static ?int $height = 250; 
+    protected static ?int $height = 250;
 
     public ?string $filter = null;
 
     protected function getFilters(): array
     {
         $currentYear = now()->year;
-        $years = range($currentYear, $currentYear - 5); 
+        $years = range($currentYear, $currentYear - 5);
 
         return collect($years)->mapWithKeys(fn ($year) => [(string) $year => (string) $year])->toArray();
     }
@@ -59,7 +59,7 @@ class Chart extends ChartWidget
 
         $orderCounts = [];
         foreach ($months as $key => $month) {
-            $orderCounts[] = $orders[$key] ?? 0; 
+            $orderCounts[] = $orders[$key] ?? 0;
         }
 
         return [
@@ -78,10 +78,7 @@ class Chart extends ChartWidget
 
     protected function getType(): string
     {
-        return 'bar'; 
+        return 'bar';
     }
 
-
-    
-  
 }

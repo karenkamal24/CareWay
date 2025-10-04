@@ -6,6 +6,7 @@ use Filament\Pages\Dashboard as BaseDashboard;
 use App\Filament\Widgets\Chart;
 use App\Filament\Widgets\OrdersStatsOverview;
 use App\Filament\Widgets\orderstuts;
+use App\Filament\Widgets\LabStats;
 
 class Dashboard extends BaseDashboard
 {
@@ -24,6 +25,7 @@ class Dashboard extends BaseDashboard
             OrdersStatsOverview::class,
             Chart::class,
             orderstuts::class,
+            LabStats::class,
         ];
     }
 }
