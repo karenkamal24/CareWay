@@ -14,7 +14,7 @@ use App\Http\Controllers\HealthStatisticController;
 use App\Http\Controllers\User\BannerController;
 use App\Http\Controllers\User\DoctorReviewController;
 use App\Http\Controllers\PrescriptionController;
-
+use App\Http\Controllers\ServiceController;
 
 use Intervention\Image\Facades\Image;
 use App\Http\Controllers\User\TestResultController;
@@ -204,6 +204,10 @@ Route::get('/products/by-name', [PrescriptionController::class, 'getByName']);
 Route::get('/health-statistics', [HealthStatisticController::class, 'index']);
 Route::get('/medical-articles', [HealthStatisticController::class, 'indexMedicalArticles']);
 Route::get('/gallery', [HealthStatisticController::class, 'indexGallery']);
+
+
+
+Route::apiResource('services', ServiceController::class);
 
 // Route::get('/processing', function () {
 //     return view('processing');
