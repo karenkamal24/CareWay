@@ -11,36 +11,38 @@ use App\Models\AvailableDoctor;
 
 class DoctorController extends Controller
 {
-    public function index()
-    {
-        try {
-            $doctors = Doctor::all();
-            $doctorsData = $doctors->map(function ($doctor) {
-                $doctor->image_url = url('storage/' . $doctor->image);
-                return $doctor;
-            });
-            return response()->json($doctorsData);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'An error occurred while fetching doctors data'], 500);
-        }
-    }
-
-    public function show($id)
-    {
-        try {
-
-            $doctor = Doctor::with('availableAppointments')->find($id);
-            if (!$doctor) {
-                return response()->json(['error' => 'Doctor not found'], 404);
-            }
+public function index()
+{
+    try {
+        $doctors = Doctor::all();
+        $doctorsData = $doctors->map(function ($doctor) {
             $doctor->image_url = url('storage/' . $doctor->image);
-            return response()->json($doctor);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'An error occurred while fetching doctor data'], 500);
-        }
+            $doctor->average_rate = $doctor->averageRate();
+            return $doctor;
+        });
+        return response()->json($doctorsData);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'An error occurred while fetching doctors data'], 500);
     }
+}
 
-    
+public function show($id)
+{
+    try {
+        $doctor = Doctor::with('availableAppointments', 'reviews')->find($id);
+        if (!$doctor) {
+            return response()->json(['error' => 'Doctor not found'], 404);
+        }
+        $doctor->image_url = url('storage/' . $doctor->image);
+        $doctor->average_rate = $doctor->averageRate(); 
+        return response()->json($doctor);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'An error occurred while fetching doctor data'], 500);
+    }
+}
+
+
+
 
 
 }
