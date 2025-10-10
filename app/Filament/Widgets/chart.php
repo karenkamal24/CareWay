@@ -19,7 +19,7 @@ class Chart extends ChartWidget
         return Auth::check() && Gate::allows('viewOrdersStatsOverview', \App\Dashboard::class);
     }
     protected static ?string $heading = 'Orders Per Year';
-
+//    protected static ?string $heading = 'Orders Per Year (Bar Chart)';
     protected static ?int $height = 250;
 
     public ?string $filter = null;

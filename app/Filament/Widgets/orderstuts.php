@@ -28,10 +28,10 @@ class orderstuts extends ChartWidget
                     'label' => 'Orders',
                     'data' => array_values($orders),
                     'backgroundColor' => [
-                        'rgba(255, 99, 132, 0.6)',  // Pending (أحمر)
-                        'rgba(54, 162, 235, 0.6)',  // Processing (أزرق)
-                        'rgba(75, 192, 192, 0.6)',  // Delivered (أخضر)
-                        'rgba(255, 206, 86, 0.6)',  // Cancelled (أصفر)
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
                     ],
                 ],
             ],
@@ -46,10 +46,10 @@ class orderstuts extends ChartWidget
     protected function getOptions(): array
     {
         return [
-            'maintainAspectRatio' => false, // يسمح بتغيير الحجم يدويًا
+            'maintainAspectRatio' => false,
             'responsive' => true,
             'plugins' => [
-                'legend' => ['position' => 'bottom'], // تصغير الأسطورة وتحريكها للأسفل
+                'legend' => ['position' => 'bottom'],
             ],
         ];
     }
@@ -57,7 +57,7 @@ class orderstuts extends ChartWidget
     protected function getContainerAttributes(): array
     {
         return [
-            'style' => 'max-height: 200px;', // 🔹 تصغير ارتفاع الحاوية
+            'style' => 'max-height: 200px;', 
         ];
     }
 }
