@@ -94,13 +94,13 @@ public function searchMedicines(Request $request)
     }
 
 
-    private function cleanMedicineName($name)
-    {
-        $name = preg_replace('/^(R\/|\-|\s+)/i', '', $name);
-        $name = preg_replace('/\b(tab|mg|ml|gm|mcg)\b/i', '', $name);
-        $name = preg_replace('/[^a-zA-Z0-9\s]+/', '', $name);
-        return trim(preg_replace('/\s+/', ' ', $name));
-    }
+private function cleanMedicineName($name)
+{
+    $name = preg_replace('/^(R\/|RI|\-|\s+)/i', '', $name);
+    $name = preg_replace('/\b(tab|mg|ml|gm|mcg)\b/i', '', $name);
+    $name = preg_replace('/[^a-zA-Z0-9\s]+/', '', $name);
+    return trim(preg_replace('/\s+/', ' ', $name));
+}
 
 public function getByName(Request $request)
 {
@@ -119,7 +119,7 @@ public function getByName(Request $request)
         ], 404);
     }
 
-  
+
     $relatedProducts = Product::where('active_ingredient', $product->active_ingredient)
                               ->where('id', '!=', $product->id)
                               ->get();
