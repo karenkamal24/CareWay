@@ -1,0 +1,505 @@
+{
+  "info": {
+    "name": "Patient API Collection",
+    "description": "Collection for testing Patient API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "doctor_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('auth_token', jsonData.data.token || jsonData.token);",
+                  "    pm.collectionVariables.set('auth_token', jsonData.data.token || jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"patient@test.com\",\n  \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": ["{{base_url}}"],
+              "path": ["login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Medications",
+      "item": [
+        {
+          "name": "Register Medication",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medication_name\": \"Aspirin\",\n  \"dose\": \"100mg\",\n  \"frequency\": \"Once daily\",\n  \"duration\": \"7 days\",\n  \"start_date\": \"2024-01-01\",\n  \"end_date\": \"2024-01-08\",\n  \"patient_notes\": \"Take with food\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/patient/medications",
+              "host": ["{{base_url}}"],
+              "path": ["patient", "medications"]
+            }
+          }
+        },
+        {
+          "name": "Get All Medications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient/medications",
+              "host": ["{{base_url}}"],
+              "path": ["patient", "medications"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Survey",
+      "item": [
+        {
+          "name": "Submit Survey - Habits Only",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "habits[smoking]",
+                  "value": "No",
+                  "type": "text"
+                },
+                {
+                  "key": "habits[caffeine]",
+                  "value": "2 cups per day",
+                  "type": "text"
+                },
+                {
+                  "key": "habits[exercise]",
+                  "value": "3 times per week",
+                  "type": "text"
+                },
+                {
+                  "key": "habits[sleep_hours]",
+                  "value": "8",
+                  "type": "text"
+                },
+                {
+                  "key": "habits[notes]",
+                  "value": "Regular exercise routine",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/patient/survey",
+              "host": ["{{base_url}}"],
+              "path": ["patient", "survey"]
+            }
+          }
+        },
+        {
+          "name": "Submit Survey - With Diseases",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "diseases[0][disease_name]",
+                  "value": "Diabetes",
+                  "type": "text"
+                },
+                {
+                  "key": "diseases[0][status]",
+                  "value": "chronic",
+                  "type": "text"
+                },
+                {
+                  "key": "diseases[1][disease_name]",
+                  "value": "Hypertension",
+                  "type": "text"
+                },
+                {
+                  "key": "diseases[1][status]",
+                  "value": "active",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/patient/survey",
+              "host": ["{{base_url}}"],
+              "path": ["patient", "survey"]
+            }
+          }
+        },
+        {
+          "name": "Submit Survey - With Medications",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "medications[0][medication_name]",
+                  "value": "Aspirin",
+                  "type": "text"
+                },
+                {
+                  "key": "medications[0][dose]",
+                  "value": "100mg",
+                  "type": "text"
+                },
+                {
+                  "key": "medications[0][frequency]",
+                  "value": "Once daily",
+                  "type": "text"
+                },
+                {
+                  "key": "medications[0][duration]",
+                  "value": "7 days",
+                  "type": "text"
+                },
+                {
+                  "key": "medications[0][patient_notes]",
+                  "value": "Take with food",
+                  "type": "text"
+                },
+                {
+                  "key": "medications[1][medication_name]",
+                  "value": "Paracetamol",
+                  "type": "text"
+                },
+                {
+                  "key": "medications[1][dose]",
+                  "value": "500mg",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/patient/survey",
+              "host": ["{{base_url}}"],
+              "path": ["patient", "survey"]
+            }
+          }
+        },
+        {
+          "name": "Submit Survey - Complete (All Fields)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "habits[smoking]",
+                  "value": "No",
+                  "type": "text"
+                },
+                {
+                  "key": "habits[caffeine]",
+                  "value": "2 cups per day",
+                  "type": "text"
+                },
+                {
+                  "key": "habits[sleep_hours]",
+                  "value": "8",
+                  "type": "text"
+                },
+                {
+                  "key": "diseases[0][disease_name]",
+                  "value": "Diabetes",
+                  "type": "text"
+                },
+                {
+                  "key": "diseases[0][status]",
+                  "value": "chronic",
+                  "type": "text"
+                },
+                {
+                  "key": "medications[0][medication_name]",
+                  "value": "Aspirin",
+                  "type": "text"
+                },
+                {
+                  "key": "medications[0][dose]",
+                  "value": "100mg",
+                  "type": "text"
+                },
+                {
+                  "key": "medications[0][frequency]",
+                  "value": "Once daily",
+                  "type": "text"
+                },
+                {
+                  "key": "attachments[0][type]",
+                  "value": "xray",
+                  "type": "text"
+                },
+                {
+                  "key": "attachments[0][file]",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "attachments[0][description]",
+                  "value": "Chest X-ray",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/patient/survey",
+              "host": ["{{base_url}}"],
+              "path": ["patient", "survey"]
+            }
+          }
+        },
+        {
+          "name": "Submit Survey - With Attachments",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "attachments[0][type]",
+                  "value": "xray",
+                  "type": "text"
+                },
+                {
+                  "key": "attachments[0][file]",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "attachments[0][description]",
+                  "value": "Chest X-ray",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/patient/survey",
+              "host": ["{{base_url}}"],
+              "path": ["patient", "survey"]
+            }
+          }
+        },
+        {
+          "name": "Get Survey Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient/survey",
+              "host": ["{{base_url}}"],
+              "path": ["patient", "survey"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Visits",
+      "item": [
+        {
+          "name": "Get All Visits",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient/visits",
+              "host": ["{{base_url}}"],
+              "path": ["patient", "visits"]
+            }
+          }
+        },
+        {
+          "name": "Download Visit Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient/visits/{{doctor_id}}/report",
+              "host": ["{{base_url}}"],
+              "path": ["patient", "visits", "{{doctor_id}}", "report"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Appointments",
+      "item": [
+        {
+          "name": "Book Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"available_doctor_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["appointments"]
+            }
+          }
+        },
+        {
+          "name": "Get All Appointments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["appointments"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+

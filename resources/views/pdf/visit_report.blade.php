@@ -54,7 +54,7 @@
 <body>
     <div class="header">
         <h1>Medical Visit Report</h1>
-        <p>Visit Date: {{ $visit->visit_date->format('Y-m-d H:i') }}</p>
+        <p>Visit Date: {{ $visit->visit_date ? $visit->visit_date->format('Y-m-d H:i') : 'N/A' }}</p>
     </div>
 
     <div class="section">
@@ -97,7 +97,7 @@
             <table>
                 <tr>
                     <th style="width: 20%;">Visit Date</th>
-                    <td>{{ $visit->visit_date->format('Y-m-d H:i') }}</td>
+                    <td>{{ $visit->visit_date ? $visit->visit_date->format('Y-m-d H:i') : 'N/A' }}</td>
                 </tr>
                 @if($visit->symptoms)
                     <tr>
@@ -124,10 +124,13 @@
     <div class="section">
         <div class="section-title">Medications Prescribed in This Visit</div>
         @php
-            $visitMedications = \App\Models\PatientMedication::where('patient_id', $patient->id)
-                ->where('doctor_id', $visit->doctor_id)
-                ->whereDate('start_date', $visit->visit_date->format('Y-m-d'))
-                ->get();
+            $visitMedications = collect();
+            if ($visit->visit_date) {
+                $visitMedications = \App\Models\PatientMedication::where('patient_id', $patient->id)
+                    ->where('doctor_id', $visit->doctor_id)
+                    ->whereDate('start_date', $visit->visit_date->format('Y-m-d'))
+                    ->get();
+            }
         @endphp
         @if($visitMedications->count() > 0)
             <table>
@@ -160,9 +163,12 @@
     <div class="section">
         <div class="section-title">Diseases Diagnosed in This Visit</div>
         @php
-            $visitDiseases = \App\Models\PatientDisease::where('patient_id', $patient->id)
-                ->whereDate('created_at', $visit->visit_date->format('Y-m-d'))
-                ->get();
+            $visitDiseases = collect();
+            if ($visit->visit_date) {
+                $visitDiseases = \App\Models\PatientDisease::where('patient_id', $patient->id)
+                    ->whereDate('created_at', $visit->visit_date->format('Y-m-d'))
+                    ->get();
+            }
         @endphp
         @if($visitDiseases->count() > 0)
             <table>

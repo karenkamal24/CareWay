@@ -91,7 +91,7 @@ Route::middleware('auth:sanctum')->group(function (){
 
         // Visits
         Route::get('/visits', [PatientController::class, 'getVisits']);
-        Route::get('/visits/{doctorId}/report', [PatientController::class, 'downloadVisitReport']);
+        Route::get('/visits/{visitId}/report', [PatientController::class, 'downloadSingleVisitReport']);
     });
 
     Route::prefix('reviews')->group(function () {

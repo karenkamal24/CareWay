@@ -108,6 +108,14 @@ class PatientController extends Controller
             'diseases' => 'nullable|array',
             'diseases.*.disease_name' => 'required_with:diseases|string|max:255',
             'diseases.*.status' => 'nullable|string|in:active,chronic,resolved',
+            'medications' => 'nullable|array',
+            'medications.*.medication_name' => 'required_with:medications|string|max:255',
+            'medications.*.dose' => 'nullable|string|max:255',
+            'medications.*.frequency' => 'nullable|string|max:255',
+            'medications.*.duration' => 'nullable|string|max:255',
+            'medications.*.start_date' => 'nullable|date',
+            'medications.*.end_date' => 'nullable|date|after_or_equal:medications.*.start_date',
+            'medications.*.patient_notes' => 'nullable|string',
             'attachments' => 'nullable|array',
             'attachments.*.type' => 'required_with:attachments|string|max:255',
             'attachments.*.file' => 'required_with:attachments|file|mimes:jpeg,jpg,png,pdf|max:10240',
@@ -137,6 +145,24 @@ class PatientController extends Controller
                         'patient_id' => $user->id,
                         'disease_name' => $diseaseData['disease_name'],
                         'status' => $diseaseData['status'] ?? 'active',
+                        'source' => 'patient',
+                    ]);
+                }
+            }
+
+            // Handle medications
+            if ($request->has('medications') && is_array($request->medications)) {
+                foreach ($request->medications as $medicationData) {
+                    PatientMedication::create([
+                        'patient_id' => $user->id,
+                        'medication_name' => $medicationData['medication_name'],
+                        'dose' => $medicationData['dose'] ?? null,
+                        'frequency' => $medicationData['frequency'] ?? null,
+                        'duration' => $medicationData['duration'] ?? null,
+                        'start_date' => $medicationData['start_date'] ?? null,
+                        'end_date' => $medicationData['end_date'] ?? null,
+                        'patient_notes' => $medicationData['patient_notes'] ?? null,
+                        'is_active' => true,
                         'source' => 'patient',
                     ]);
                 }
@@ -190,6 +216,10 @@ class PatientController extends Controller
 
         $habits = $user->habits;
         $diseases = $user->diseases;
+        $medications = PatientMedication::where('patient_id', $user->id)
+            ->where('source', 'patient')
+            ->orderBy('created_at', 'desc')
+            ->get();
         $attachments = $user->attachments->map(function ($attachment) {
             return [
                 'id' => $attachment->id,
@@ -205,77 +235,108 @@ class PatientController extends Controller
             'data' => [
                 'habits' => $habits,
                 'diseases' => $diseases,
+                'medications' => $medications,
                 'attachments' => $attachments,
             ]
         ]);
     }
 
     /**
-     * Download visit report for a specific doctor
-     * GET /api/patient/visits/{doctorId}/report
+     * Download visit report for a single visit
+     * GET /api/patient/visits/{visitId}/report
      */
-    public function downloadVisitReport($doctorId)
+    public function downloadSingleVisitReport($visitId)
     {
         $user = Auth::user();
         if (!$user) {
             return response()->json(['error' => 'Authentication required'], 401);
         }
 
-        $doctor = Doctor::find($doctorId);
-        if (!$doctor) {
+        // Get the specific visit
+        $visit = Visit::where('patient_id', $user->id)
+            ->where('id', $visitId)
+            ->with(['medications', 'doctor', 'patient'])
+            ->first();
+
+        if (!$visit) {
             return response()->json([
                 'success' => false,
-                'message' => 'Doctor not found'
+                'message' => 'Visit not found or you do not have access to this visit'
             ], 404);
         }
 
-        // Get all visits for this patient with this doctor
-        $visits = Visit::where('patient_id', $user->id)
-            ->where('doctor_id', $doctorId)
-            ->with(['medications', 'doctor', 'patient'])
-            ->orderBy('visit_date', 'desc')
-            ->get();
-
-        if ($visits->isEmpty()) {
+        // Check if visit has doctor_id
+        if (!$visit->doctor_id) {
             return response()->json([
                 'success' => false,
-                'message' => 'No visits found for this doctor'
+                'message' => 'This visit does not have an associated doctor'
+            ], 404);
+        }
+
+        // Load doctor separately to check if it exists
+        $doctor = Doctor::find($visit->doctor_id);
+        if (!$doctor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Doctor not found for this visit',
+                'debug' => [
+                    'visit_id' => $visit->id,
+                    'doctor_id' => $visit->doctor_id,
+                    'patient_id' => $visit->patient_id
+                ]
             ], 404);
         }
 
         try {
+            // Clean filename from special characters
+            $doctorName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $doctor->name);
+            $userName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $user->name);
+            $visitDate = $visit->visit_date ? $visit->visit_date->format('Y-m-d') : now()->format('Y-m-d');
+            $fileName = "Visit_Report_{$visitId}_{$doctorName}_{$userName}_{$visitDate}.pdf";
+            $filePath = "pdf_reports/visit_reports/{$fileName}";
+
+            // Ensure directory exists
+            if (!Storage::disk('public')->exists('pdf_reports/visit_reports')) {
+                Storage::disk('public')->makeDirectory('pdf_reports/visit_reports');
+            }
+
+            // Check if file already exists
+            if (Storage::disk('public')->exists($filePath)) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Visit report generated successfully',
+                    'pdf_url' => asset("storage/{$filePath}"),
+                    'download_url' => asset("storage/{$filePath}")
+                ]);
+            }
+
+            // Generate PDF
             $mpdf = new Mpdf([
                 'default_font' => 'dejavusans',
                 'mode' => 'utf-8',
                 'format' => 'A4',
             ]);
 
-            $html = '';
-
-            // Generate PDF for each visit
-            foreach ($visits as $visit) {
-                $visitHtml = view('pdf.visit_report', [
-                    'visit' => $visit,
-                    'patient' => $user,
-                    'doctor' => $doctor,
-                ])->render();
-
-                $html .= $visitHtml;
-
-                // Add page break between visits (except for the last one)
-                if ($visit !== $visits->last()) {
-                    $html .= '<pagebreak />';
-                }
-            }
+            $html = view('pdf.visit_report', [
+                'visit' => $visit,
+                'patient' => $user,
+                'doctor' => $doctor,
+            ])->render();
 
             $mpdf->WriteHTML($html);
 
-            $fileName = "Visit_Report_{$doctor->name}_{$user->name}_" . now()->format('Y-m-d') . ".pdf";
+            // Save PDF to storage
+            $pdfContent = $mpdf->Output('', 'S');
+            Storage::disk('public')->put($filePath, $pdfContent);
 
-            return response()->streamDownload(
-                fn() => print($mpdf->Output('', 'S')),
-                $fileName
-            );
+            return response()->json([
+                'success' => true,
+                'message' => 'Visit report generated successfully',
+                'pdf_url' => asset("storage/{$filePath}"),
+                'download_url' => asset("storage/{$filePath}"),
+                'file_name' => $fileName,
+                'visit_id' => $visit->id
+            ]);
 
         } catch (\Exception $e) {
             return response()->json([
@@ -297,19 +358,17 @@ class PatientController extends Controller
         }
 
         $visits = Visit::where('patient_id', $user->id)
-            ->with(['doctor', 'medications'])
+            ->with(['doctor'])
             ->orderBy('visit_date', 'desc')
             ->get()
             ->map(function ($visit) {
                 return [
                     'id' => $visit->id,
-                    'visit_date' => $visit->visit_date->format('Y-m-d H:i'),
-                    'doctor_name' => $visit->doctor->name ?? 'N/A',
-                    'doctor_specialization' => $visit->doctor->specialization ?? 'N/A',
-                    'symptoms' => $visit->symptoms,
-                    'diagnosis' => $visit->diagnosis,
-                    'notes' => $visit->notes,
-                    'medications' => $visit->medications,
+                    'visit_date' => $visit->visit_date ? $visit->visit_date->format('Y-m-d H:i') : null,
+                    'doctor' => [
+                        'id' => $visit->doctor->id ?? null,
+                        'name' => $visit->doctor->name ?? 'N/A',
+                    ],
                 ];
             });
 
