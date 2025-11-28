@@ -43,6 +43,7 @@ class RegisterRequest extends FormRequest
                 'regex:/[@$!%*?&]/',
                 'confirmed'
             ],
+            'fcm_token' => 'nullable|string',
         ];
     }
 

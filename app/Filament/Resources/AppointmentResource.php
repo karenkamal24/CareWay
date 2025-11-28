@@ -19,6 +19,8 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Support\Facades\Auth;
+use App\Filament\Resources\AppointmentResource\RelationManagers;
+
 
 class AppointmentResource extends Resource
 {
@@ -115,9 +117,25 @@ class AppointmentResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')->label('Patient'),
+                Tables\Columns\TextColumn::make('user.name')->label('Patient')->searchable(),
+                Tables\Columns\TextColumn::make('user.email')->label('Patient Email')->searchable(),
+                Tables\Columns\TextColumn::make('user.phone')->label('Patient Phone'),
+                Tables\Columns\TextColumn::make('diseases_count')
+                    ->label('Diseases')
+                    ->getStateUsing(function ($record) {
+                        return $record->user->diseases()->count();
+                    })
+                    ->badge()
+                    ->color('warning'),
+                Tables\Columns\TextColumn::make('medications_count')
+                    ->label('Medications')
+                    ->getStateUsing(function ($record) {
+                        return $record->user->medications()->count();
+                    })
+                    ->badge()
+                    ->color('success'),
                 Tables\Columns\TextColumn::make('doctor.name')->label('Doctor'),
-                Tables\Columns\TextColumn::make('appointment_time')->dateTime(),
+                Tables\Columns\TextColumn::make('appointment_time')->dateTime()->sortable(),
                 Tables\Columns\TextColumn::make('slot_details')
                     ->label('Slot Details')
                     ->getStateUsing(function ($record) {
@@ -162,7 +180,15 @@ class AppointmentResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            RelationManagers\PatientDetailsRelationManager::class,
+            RelationManagers\PatientVisitsRelationManager::class,
+            RelationManagers\PatientMedicationsRelationManager::class,
+            RelationManagers\PatientDiseasesRelationManager::class,
+            RelationManagers\PatientHabitsRelationManager::class,
+            RelationManagers\PatientAttachmentsRelationManager::class,
+            RelationManagers\VisitsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

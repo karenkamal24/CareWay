@@ -40,7 +40,7 @@ class User extends Authenticatable implements FilamentUser
         'password',
         'image',
         'user_type',
-
+        'fcm_token',
     ];
 
     /**
@@ -86,6 +86,30 @@ public function notifications()
 public function testResults()
 {
     return $this->hasMany(TestResult::class, 'patient_id');
+}
+public function diseases()
+{
+    return $this->hasMany(PatientDisease::class, 'patient_id');
+}
+
+public function medications()
+{
+    return $this->hasMany(PatientMedication::class, 'patient_id');
+}
+
+public function habits()
+{
+    return $this->hasOne(PatientHabit::class, 'patient_id');
+}
+
+public function attachments()
+{
+    return $this->hasMany(PatientAttachment::class, 'patient_id');
+}
+
+public function visits()
+{
+    return $this->hasMany(Visit::class, 'patient_id')->latest();
 }
 
 

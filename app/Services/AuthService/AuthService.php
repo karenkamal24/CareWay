@@ -24,6 +24,7 @@ class AuthService
             'gender' => $data['gender'],
             'date_of_birth' => $data['date_of_birth'],
             'password' => Hash::make($data['password']),
+            'fcm_token' => $data['fcm_token'] ?? null,
         ]);
 
         $token = $user->createToken("API TOKEN")->plainTextToken;
@@ -44,6 +45,12 @@ class AuthService
 
         if (!$user) {
             return null;
+        }
+
+        // تحديث FCM token إذا تم إرساله
+        if (isset($data['fcm_token']) && !empty($data['fcm_token'])) {
+            $user->fcm_token = $data['fcm_token'];
+            $user->save();
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;

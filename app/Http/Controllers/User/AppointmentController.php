@@ -33,6 +33,18 @@ public function storeAppointment(Request $request)
             'available_doctor_id' => 'required|exists:available_doctors,id'
         ]);
 
+        // Check if user has an existing active appointment
+        $existingAppointment = Appointment::where('user_id', $user->id)
+            ->whereIn('status', ['scheduled', 'completed'])
+            ->where('payment_status', '!=', 'failed')
+            ->first();
+
+        if ($existingAppointment) {
+            return response()->json([
+                'error' => 'You already have an active appointment. Please complete or cancel your current appointment before booking a new one.'
+            ], 400);
+        }
+
         $availableDoctor = AvailableDoctor::findOrFail($request->available_doctor_id);
 
         if ($availableDoctor->booked_count >= $availableDoctor->capacity) {
@@ -46,11 +58,11 @@ public function storeAppointment(Request $request)
             'doctor_id'           => $doctor->id,
             'available_doctor_id' => $availableDoctor->id,
             'type'                => $availableDoctor->type,
-            'day_of_week'         => $availableDoctor->day_of_week,
             'appointment_time'    => $availableDoctor->start_time,
-            'payment_state'      => 'unpaid',
+            'payment_status'      => 'pending',
             'amount'              => $doctor->price,
             'payment_method'      => 'cash',
+            'status'              => 'scheduled',
         ]);
 
 

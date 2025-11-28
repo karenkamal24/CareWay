@@ -21,7 +21,9 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Actions\Action;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\TestResultNotification;
+use App\Services\FirebaseNotificationService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class TestResultResource extends Resource
 {
@@ -185,7 +187,35 @@ class TestResultResource extends Resource
     public static function sendNotification($record)
     {
         if ($record->status === 'paid' && $record->test_status === 'completed') {
+            // إرسال إشعار قاعدة البيانات والبريد
             Notification::send($record->patient, new TestResultNotification($record));
+
+            // إرسال إشعار FCM مباشر
+            if ($record->patient && $record->patient->fcm_token) {
+                try {
+                    $firebaseService = app(FirebaseNotificationService::class);
+                    $result = $firebaseService->sendToUser(
+                        $record->patient->fcm_token,
+                        'نتيجة الفحص جاهزة',
+                        'نتيجة فحصك أصبحت جاهزة الآن. يمكنك الاطلاع عليها.',
+                        [
+                            'type' => 'test_result_ready',
+                            'test_id' => (string)$record->id,
+                        ]
+                    );
+
+                    if ($result) {
+                        Log::info("✅ FCM notification sent successfully for test result #{$record->id} to user #{$record->patient->id}");
+                    } else {
+                        Log::warning("⚠️ FCM notification failed for test result #{$record->id}");
+                    }
+                } catch (\Exception $fcmException) {
+                    Log::error("❌ Failed to send FCM notification for test result #{$record->id}: " . $fcmException->getMessage());
+                    Log::error("Exception trace: " . $fcmException->getTraceAsString());
+                }
+            } else {
+                Log::info("ℹ️ User #{$record->patient->id} does not have FCM token for test result #{$record->id}");
+            }
         }
     }
 

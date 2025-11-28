@@ -44,6 +44,10 @@ class Appointment extends Model
     {
         return $this->belongsTo(AvailableDoctor::class, 'available_doctor_id');
     }
+    public function visits()
+    {
+        return $this->hasMany(\App\Models\Visit::class, 'patient_id', 'user_id');
+    }
 
 
 

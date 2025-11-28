@@ -24,6 +24,7 @@ use App\Http\Controllers\User\DoctorController;
 use App\Http\Controllers\User\ChatController;
 use App\Http\Controllers\User\DepartmentController;
 use App\Http\Controllers\User\AppointmentController;
+use App\Http\Controllers\User\PatientController;
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -52,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function (){
         Route::get('/', [NotificationController::class, 'index']);
         Route::get('/unread', [NotificationController::class, 'unread']);
         Route::post('/mark-as-read/{id}', [NotificationController::class, 'markAsRead']);
+        Route::post('/fcm-token', [NotificationController::class, 'updateFcmToken']);
     });
 
     Route::post('/paymob/pay', [PaymentController::class, 'storeCardOrder']);
@@ -77,6 +79,20 @@ Route::middleware('auth:sanctum')->group(function (){
         Route::delete('/{id}', [AppointmentController::class, 'cancel']);
     });
 
+    // Patient endpoints
+    Route::prefix('patient')->group(function () {
+        // Medications
+        Route::post('/medications', [PatientController::class, 'storeMedication']);
+        Route::get('/medications', [PatientController::class, 'getMedications']);
+
+        // Survey/Form
+        Route::post('/survey', [PatientController::class, 'submitSurvey']);
+        Route::get('/survey', [PatientController::class, 'getSurvey']);
+
+        // Visits
+        Route::get('/visits', [PatientController::class, 'getVisits']);
+        Route::get('/visits/{doctorId}/report', [PatientController::class, 'downloadVisitReport']);
+    });
 
     Route::prefix('reviews')->group(function () {
     Route::post('/', [DoctorReviewController::class, 'store']);

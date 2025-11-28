@@ -9,6 +9,7 @@ use Filament\Forms;
 use App\Traits\SendMailTrait;
 use Filament\Forms\Form;
 use App\Notifications\OrderShippedNotification;
+use App\Services\FirebaseNotificationService;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables;
@@ -49,7 +50,7 @@ class OrderResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            
+
             ->columns([
                 TextColumn::make('id')->label('Order ID')->sortable(),
                 TextColumn::make('name')->label('Customer Name')->searchable(),
@@ -78,7 +79,7 @@ class OrderResource extends Resource
                     ->options([
                         'cash' => 'cash',
                         'card' => 'card',
-                      
+
                     ]),
 
 
@@ -90,7 +91,7 @@ class OrderResource extends Resource
                     ->label('Update Status')
                     ->modalHeading('Update Order Status')
                     ->icon('heroicon-o-pencil')
-           
+
 
                     ->after(function (Order $order) {
                     Log::info("Executing after() for Order #{$order->id}");
@@ -111,10 +112,37 @@ class OrderResource extends Resource
                 Log::info("Email found for user #{$order->user->id}: {$order->user->email}");
 
                 try {
-                    // إرسال الإشعار
+                    // إرسال إشعار قاعدة البيانات
                     Log::info("Sending notification to user #{$order->user->id}...");
                     $order->user->notify(new OrderShippedNotification($order));
                     Log::info("Notification sent successfully!");
+
+                    // إرسال إشعار FCM مباشر
+                    if ($order->user->fcm_token) {
+                        try {
+                            $firebaseService = app(FirebaseNotificationService::class);
+                            $result = $firebaseService->sendToUser(
+                                $order->user->fcm_token,
+                                'تم شحن طلبك!',
+                                "تم شحن طلبك رقم #{$order->id} بنجاح.",
+                                [
+                                    'type' => 'order_shipped',
+                                    'order_id' => (string)$order->id,
+                                ]
+                            );
+
+                            if ($result) {
+                                Log::info("✅ FCM notification sent successfully for order #{$order->id} to user #{$order->user->id}");
+                            } else {
+                                Log::warning("⚠️ FCM notification failed for order #{$order->id}");
+                            }
+                        } catch (\Exception $fcmException) {
+                            Log::error("❌ Failed to send FCM notification for order #{$order->id}: " . $fcmException->getMessage());
+                            Log::error("Exception trace: " . $fcmException->getTraceAsString());
+                        }
+                    } else {
+                        Log::info("ℹ️ User #{$order->user->id} does not have FCM token");
+                    }
 
                     // إرسال البريد الإلكتروني
                     $receiver_mail = $order->user->email;

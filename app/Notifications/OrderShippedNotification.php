@@ -11,9 +11,11 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\DatabaseMessage;
 use App\Models\Order;
+use App\Notifications\Channels\FirebaseChannel;
+use App\Notifications\Contracts\FirebaseNotification;
 use Illuminate\Support\Facades\Log;
 
-class OrderShippedNotification extends Notification implements ShouldQueue
+class OrderShippedNotification extends Notification implements FirebaseNotification
 {
     use Queueable;
 
@@ -26,7 +28,8 @@ class OrderShippedNotification extends Notification implements ShouldQueue
 
     public function via($notifiable)
     {
-        return ['mail', 'database', 'broadcast'];
+        // فقط قاعدة البيانات والبريد - Firebase يتم إرساله مباشرة في Order model
+        return ['mail', 'database'];
     }
 
     /**
@@ -78,5 +81,21 @@ class OrderShippedNotification extends Notification implements ShouldQueue
     public function broadcastAs()
     {
         return 'order.shipped';
+    }
+
+    /**
+     * إشعار Firebase Cloud Messaging
+     */
+    public function toFirebase($notifiable): array
+    {
+        return [
+            'title' => 'تم شحن طلبك!',
+            'body' => "تم شحن طلبك رقم #{$this->order->id} بنجاح.",
+            'data' => [
+                'type' => 'order_shipped',
+                'order_id' => $this->order->id,
+                'message' => $this->notificationData()['message'],
+            ],
+        ];
     }
 }
