@@ -53,7 +53,7 @@ class PatientTestSeeder extends Seeder
             ]
         );
 
-     
+
         $patient = User::firstOrCreate(
             ['email' => 'patient@test.com'],
             [
@@ -157,7 +157,7 @@ class PatientTestSeeder extends Seeder
 
         PatientAttachment::create([
             'patient_id' => $patient->id,
-            'type' => 'lab', // ✔ بدل lab_result
+            'type' => 'lab',
             'file_path' => 'attachments/lab_result_001.pdf',
             'description' => 'Blood test results',
             'source' => 'patient',
@@ -165,14 +165,14 @@ class PatientTestSeeder extends Seeder
 
         PatientAttachment::create([
             'patient_id' => $patient->id,
-            'type' => 'radiology', // ✔ بدل xray
+            'type' => 'radiology',
             'file_path' => 'attachments/xray_001.jpg',
             'description' => 'Chest X-ray',
             'source' => 'doctor',
         ]);
 
 
-        // إنشاء زيارات للمريض
+
         Visit::create([
             'patient_id' => $patient->id,
             'doctor_id' => $doctor->id,
@@ -196,13 +196,13 @@ class PatientTestSeeder extends Seeder
             'diagnosis' => 'General health check',
             'notes' => 'All vitals normal. Continue current medications.',
         ]);
-// إنشاء Slot للطبيب
+
 $slot = AvailableDoctor::create([
     'doctor_id' => $doctor->id,
     'day_of_week' => 'Monday',
     'start_time' => '09:00:00',
     'end_time' => '12:00:00',
-    'type' => 'clinic', // حسب قيم ENUM عندك
+    'type' => 'clinic',
 ]);
 
 // إنشاء Appointment للمريض
@@ -210,7 +210,7 @@ Appointment::create([
     'user_id' => $patient->id,
     'doctor_id' => $doctor->id,
     'available_doctor_id' => $slot->id,
-    'type' => 'clinic',  // نفس نوع السلوْت
+    'type' => 'clinic',
     'appointment_time' => now()->addDays(1)->setTime(10, 0),
     'payment_status' => 'completed',
     'amount' => 200,

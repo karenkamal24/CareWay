@@ -25,6 +25,7 @@ use App\Http\Controllers\User\ChatController;
 use App\Http\Controllers\User\DepartmentController;
 use App\Http\Controllers\User\AppointmentController;
 use App\Http\Controllers\User\PatientController;
+use App\Http\Controllers\User\AIAssistantController;
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -63,6 +64,12 @@ Route::middleware('auth:sanctum')->group(function (){
     Route::prefix('doctors')->group(function () {
     Route::get('/', [DoctorController::class, 'index']);
     Route::get('/{id}', [DoctorController::class, 'show']);
+    });
+
+    // AI Assistant - مساعد ذكي لاقتراح الأطباء
+    Route::prefix('ai-assistant')->group(function () {
+        Route::post('/suggest-doctors', [AIAssistantController::class, 'suggestDoctors']);
+        Route::get('/common-symptoms', [AIAssistantController::class, 'getCommonSymptoms']);
     });
     //Department
     Route::prefix('departments')->group(function () {
@@ -235,3 +242,34 @@ Route::apiResource('services', ServiceController::class);
 // Route::get('/processing', function () {
 //     return view('processing');
 // })->name('processing');
+
+
+use App\Services\SymptomAnalyzerService;
+
+Route::get('/test-ai', function () {
+    $service = new SymptomAnalyzerService();
+    $result = $service->analyzeSymptoms('ألم في الصدر وضيق في التنفس');
+
+    return response()->json($result, 200, [], JSON_UNESCAPED_UNICODE);
+});
+
+Route::get('/test-groq', function () {
+    try {
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . env('GROQ_API_KEY'),
+            'Content-Type'  => 'application/json',
+        ])->post('https://api.groq.com/openai/v1/chat/completions', [
+            'model' => 'llama-3.1-8b-instant',
+            'messages' => [
+                ['role' => 'user', 'content' => 'قل مرحبا']
+            ]
+        ]);
+
+        return $response->json();
+    } catch (Exception $e) {
+        return $e->getMessage();
+    }
+});
+use App\Http\Controllers\Api\AIController;
+
+Route::post('/ai/suggest-doctors', [AIController::class, 'suggestDoctors']);
