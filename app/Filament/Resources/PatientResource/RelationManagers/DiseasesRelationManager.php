@@ -26,6 +26,7 @@ class DiseasesRelationManager extends RelationManager
                 Forms\Components\Select::make('status')
                     ->options([
                         'active' => 'Active',
+                        'chronic' => 'Chronic',
                         'resolved' => 'Resolved',
                     ])
                     ->required()
@@ -53,6 +54,7 @@ class DiseasesRelationManager extends RelationManager
                 Tables\Columns\BadgeColumn::make('status')
                     ->colors([
                         'success' => 'active',
+                        'warning' => 'chronic',
                         'danger'  => 'resolved',
                     ])
                     ->label('Status'),
@@ -69,12 +71,45 @@ class DiseasesRelationManager extends RelationManager
                     ->date()
                     ->label('Added At'),
             ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('source')
+                    ->label('Source')
+                    ->options([
+                        'doctor' => 'Doctor',
+                        'patient' => 'Patient',
+                        'external' => 'External',
+                    ]),
+
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Status')
+                    ->options([
+                        'active' => 'Active',
+                        'chronic' => 'Chronic',
+                        'resolved' => 'Resolved',
+                    ]),
+            ])
+
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Add Disease'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+
+                // Resolve disease
+                Tables\Actions\Action::make('resolve')
+                    ->label('Resolve')
+                    ->icon('heroicon-o-check-circle')
+                    ->visible(fn ($record) => $record->status !== 'resolved')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(function ($record) {
+                        $record->update([
+                            'status' => 'resolved'
+                        ]);
+                    })
+                    ->successNotificationTitle('Disease marked as resolved'),
+
                 Tables\Actions\DeleteAction::make(),
             ]);
     }

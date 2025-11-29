@@ -73,6 +73,22 @@ class MedicationsRelationManager extends RelationManager
                     ->label('Source'),
             ])
 
+            ->filters([
+                Tables\Filters\SelectFilter::make('source')
+                    ->label('Source')
+                    ->options([
+                        'doctor' => 'Doctor',
+                        'patient' => 'Patient',
+                        'external' => 'External',
+                    ]),
+
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('Status')
+                    ->placeholder('All')
+                    ->trueLabel('Active')
+                    ->falseLabel('Stopped'),
+            ])
+
             ->headerActions([
                 Tables\Actions\CreateAction::make()->label("Add Medication"),
             ])
@@ -83,26 +99,32 @@ class MedicationsRelationManager extends RelationManager
                 // Stop medication
                 Tables\Actions\Action::make('stop')
                     ->label('Stop')
+                    ->icon('heroicon-o-x-circle')
                     ->visible(fn ($record) => $record->is_active)
                     ->color('danger')
+                    ->requiresConfirmation()
                     ->action(function ($record) {
                         $record->update([
                             'is_active' => false,
                             'end_date' => now(),
                         ]);
-                    }),
+                    })
+                    ->successNotificationTitle('Medication stopped successfully'),
 
                 // Activate medication
                 Tables\Actions\Action::make('activate')
                     ->label('Activate')
+                    ->icon('heroicon-o-check-circle')
                     ->visible(fn ($record) => ! $record->is_active)
                     ->color('success')
+                    ->requiresConfirmation()
                     ->action(function ($record) {
                         $record->update([
                             'is_active' => true,
                             'start_date' => now(),
                         ]);
-                    }),
+                    })
+                    ->successNotificationTitle('Medication activated successfully'),
 
                 Tables\Actions\DeleteAction::make(),
             ]);
