@@ -9,7 +9,7 @@ use App\Services\SymptomAnalyzerService;
 class AIController extends Controller
 {
     /**
-     * استلام الأعراض من المستخدم وإرجاع الأقسام + الدكاترة
+     * API لاستقبال الأعراض واقتراح الأقسام والأطباء حسب أقرب مواعيد
      */
     public function suggestDoctors(Request $request, SymptomAnalyzerService $service)
     {
@@ -22,10 +22,15 @@ class AIController extends Controller
             'symptoms.min'      => 'من فضلك اكتب عرض واحد على الأقل بشكل واضح.',
         ]);
 
-        // استدعاء الخدمة
+        // تشغيل الخدمة
         $result = $service->analyzeSymptoms($request->input('symptoms'));
 
-        // إرجاع JSON بالعربي بدون Unicode
+        // لو مفيش أطباء عندهم مواعيد قريبة
+        if ($result['success'] && empty($result['suggested_doctors'])) {
+            $result['message'] = 'تم تحليل الأعراض بنجاح، ولكن لا يوجد مواعيد متاحة حالياً لهؤلاء الأطباء.';
+        }
+
+        // إرجاع JSON بالعربية بدون Unicode مشفر
         return response()->json($result, 200, [], JSON_UNESCAPED_UNICODE);
     }
 }

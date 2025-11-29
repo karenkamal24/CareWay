@@ -10,7 +10,7 @@ use App\Models\Doctor;
 class SymptomAnalyzerService
 {
     /**
-     * تحليل الأعراض باستخدام AI واقتراح الأقسام والأطباء
+     * تحليل الأعراض باستخدام الذكاء الاصطناعي واقتراح الأقسام والأطباء الأقرب موعدًا
      */
     public function analyzeSymptoms(string $symptoms): array
     {
@@ -18,21 +18,21 @@ class SymptomAnalyzerService
             // جلب الأقسام من قاعدة البيانات
             $departments = Department::where('status', true)->pluck('name')->toArray();
 
-            // بناء prompt للذكاء الاصطناعي
+            // بناء prompt لإرسال الأعراض للذكاء الاصطناعي
             $prompt = $this->buildPrompt($symptoms, $departments);
 
             // استدعاء Groq API
             $aiResponse = $this->callGroqAPI($prompt);
 
-            // استخراج الأقسام المقترحة
+            // تحليل الرد واستخراج الأقسام المناسبة
             $suggestedDepartments = $this->parseAIResponse($aiResponse, $departments);
 
-            // fallback في حالة عدم اكتشاف قسم
+            // Fallback في حالة عدم تعرف الذكاء الاصطناعي على القسم
             if (empty($suggestedDepartments)) {
                 $suggestedDepartments = $this->fallbackKeywordMatching($symptoms, $departments);
             }
 
-            // جلب الأطباء لهذه الأقسام
+            // جلب الأطباء حسب الأقسام مع أقرب موعد متاح
             $suggestedDoctors = $this->getDoctorsByDepartments($suggestedDepartments);
 
             return [
@@ -54,7 +54,7 @@ class SymptomAnalyzerService
     }
 
     /**
-     * بناء prompt مخصص للـ AI
+     * بناء Prompt للذكاء الاصطناعي
      */
     private function buildPrompt(string $symptoms, array $departments): string
     {
@@ -65,8 +65,8 @@ class SymptomAnalyzerService
 الأقسام الطبية المتاحة:
 {$departmentsList}
 
-حلل الأعراض واقترح اسم القسم الطبي المناسب فقط، بدون شرح.
-أجب بقائمة أقسام مفصولة بفواصل.";
+قم بتحليل الأعراض واقترح اسم القسم الطبي المناسب فقط.
+أجب بقائمة أقسام مفصولة بفواصل بدون شرح.";
     }
 
     /**
@@ -75,12 +75,11 @@ class SymptomAnalyzerService
     private function callGroqAPI(string $prompt): string
     {
         try {
-            // قراءة المفتاح من environment مباشرة بدون config
             $apiKey = $_ENV['GROQ_API_KEY'] ?? getenv('GROQ_API_KEY');
 
             if (empty($apiKey)) {
                 Log::warning('Groq API Key is missing. Using fallback mode.');
-                return ''; // هذا يؤدي لتشغيل fallback
+                return '';
             }
 
             $response = Http::timeout(10)
@@ -102,12 +101,12 @@ class SymptomAnalyzerService
 
         } catch (\Exception $e) {
             Log::error('Groq API Error: ' . $e->getMessage());
-            return ''; // fallback mode
+            return '';
         }
     }
 
     /**
-     * استخراج الأقسام من رد الـ AI
+     * استخراج الأقسام من رد الذكاء الاصطناعي
      */
     private function parseAIResponse(string $aiResponse, array $availableDepartments): array
     {
@@ -123,7 +122,7 @@ class SymptomAnalyzerService
     }
 
     /**
-     * fallback في حالة عدم توفر AI
+     * Fallback في حالة عدم توفر AI
      */
     private function fallbackKeywordMatching(string $symptoms, array $departments): array
     {
@@ -132,9 +131,9 @@ class SymptomAnalyzerService
 
         $keywords = [
             'أمراض القلب والشرايين' => ['قلب', 'صدر', 'ضغط', 'خفقان', 'ضيق تنفس'],
-            'الأمراض العصبية' => ['صداع', 'دوخة', 'شلل', 'تنميل', 'تشنج', 'مخ'],
-            'أمراض الصدر' => ['تنفس', 'كحة', 'سعال', 'كتمة', 'ربو'],
-            'الباطنة العامة' => ['تعب', 'عام', 'فحص'],
+            'الأمراض العصبية' => ['صداع', 'دوخة', 'شلل', 'تنميل', 'مخ'],
+            'أمراض الصدر' => ['تنفس', 'سعال', 'كحة', 'ربو', 'كتمة'],
+            'الباطنة العامة' => ['فحص', 'تعب', 'عام'],
         ];
 
         foreach ($keywords as $dept => $words) {
@@ -149,21 +148,24 @@ class SymptomAnalyzerService
     }
 
     /**
-     * جلب الأطباء بناءً على الأقسام
+     * جلب الأطباء بناءً على الأقسام + ترتيبهم حسب أقرب موعد متاح
      */
     private function getDoctorsByDepartments(array $departments): array
     {
         if (empty($departments)) return [];
 
-        // الحصول على IDs الأقسام
         $departmentIds = Department::whereIn('name', $departments)->pluck('id')->toArray();
 
-        return Doctor::whereIn('department_id', $departmentIds)
-            ->select('id', 'name', 'specialization', 'department_id', 'price', 'rate', 'phone', 'image as image_url', 'degree')
-            ->with(['department:id,name'])
-            ->orderBy('rate', 'DESC')
+        $doctors = Doctor::whereIn('department_id', $departmentIds)
+            ->with(['department:id,name', 'availableAppointments' => function ($q) {
+                $q->where('is_booked', false)
+                  ->whereColumn('booked_count', '<', 'capacity')
+                  ->orderBy('start_time', 'ASC');
+            }])
             ->get()
             ->map(function ($doctor) {
+                $nextSlot = $doctor->availableAppointments->first();
+
                 return [
                     'id' => $doctor->id,
                     'name' => $doctor->name,
@@ -174,8 +176,19 @@ class SymptomAnalyzerService
                     'price' => $doctor->price,
                     'phone' => $doctor->phone,
                     'image_url' => $doctor->image_url,
+                    'next_available_slot' => $nextSlot ? [
+                        'day_of_week' => $nextSlot->day_of_week,
+                        'start_time' => $nextSlot->start_time,
+                        'end_time' => $nextSlot->end_time,
+                        'type' => $nextSlot->type,
+                    ] : null,
                 ];
             })
+            ->filter(fn ($doctor) => $doctor['next_available_slot'] !== null)
+            ->sortBy(fn ($doctor) => $doctor['next_available_slot']['start_time'])
+            ->values()
             ->toArray();
+
+        return $doctors;
     }
 }
