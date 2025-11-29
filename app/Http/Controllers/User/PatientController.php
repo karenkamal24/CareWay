@@ -377,5 +377,156 @@ class PatientController extends Controller
             'visits' => $visits
         ]);
     }
+
+    /**
+     * Get all patient medical data in organized format
+     * GET /api/patient/medical-data
+     */
+    public function getAllMedicalData()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Authentication required'], 401);
+        }
+
+        // Get all diseases
+        $diseases = PatientDisease::where('patient_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get all medications
+        $medications = PatientMedication::where('patient_id', $user->id)
+            ->with(['doctor', 'visit'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($medication) {
+                return [
+                    'id' => $medication->id,
+                    'medication_name' => $medication->medication_name,
+                    'dose' => $medication->dose,
+                    'frequency' => $medication->frequency,
+                    'duration' => $medication->duration,
+                    'is_active' => $medication->is_active,
+                    'source' => $medication->source,
+                    'start_date' => $medication->start_date,
+                    'end_date' => $medication->end_date,
+                    'doctor_notes' => $medication->doctor_notes,
+                    'patient_notes' => $medication->patient_notes,
+                    'doctor' => $medication->doctor ? [
+                        'id' => $medication->doctor->id,
+                        'name' => $medication->doctor->name,
+                    ] : null,
+                    'visit_id' => $medication->visit_id,
+                    'created_at' => $medication->created_at,
+                    'updated_at' => $medication->updated_at,
+                ];
+            });
+
+        // Get habits
+        $habits = $user->habits;
+
+        // Get attachments
+        $attachments = $user->attachments->map(function ($attachment) {
+            return [
+                'id' => $attachment->id,
+                'type' => $attachment->type,
+                'file_url' => asset('storage/' . $attachment->file_path),
+                'description' => $attachment->description,
+                'source' => $attachment->source,
+                'created_at' => $attachment->created_at,
+                'updated_at' => $attachment->updated_at,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'diseases' => $diseases,
+                'medications' => $medications,
+                'habits' => $habits,
+                'attachments' => $attachments,
+            ]
+        ]);
+    }
+
+    /**
+     * Mark disease as resolved
+     * PUT /api/patient/diseases/{id}/resolve
+     */
+    public function resolveDisease($id)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Authentication required'], 401);
+        }
+
+        $disease = PatientDisease::where('patient_id', $user->id)
+            ->where('id', $id)
+            ->first();
+
+        if (!$disease) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Disease not found or you do not have access to this disease'
+            ], 404);
+        }
+
+        try {
+            $disease->update([
+                'status' => 'resolved'
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Disease marked as resolved successfully',
+                'disease' => $disease
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Stop medication (set is_active to false)
+     * PUT /api/patient/medications/{id}/stop
+     */
+    public function stopMedication($id)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Authentication required'], 401);
+        }
+
+        $medication = PatientMedication::where('patient_id', $user->id)
+            ->where('id', $id)
+            ->first();
+
+        if (!$medication) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Medication not found or you do not have access to this medication'
+            ], 404);
+        }
+
+        try {
+            $medication->update([
+                'is_active' => false
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Medication stopped successfully',
+                'medication' => $medication
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
 

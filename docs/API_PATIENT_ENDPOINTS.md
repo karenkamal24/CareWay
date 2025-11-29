@@ -15,9 +15,7 @@ All endpoints require **Bearer Token** in the header:
 
 ```
 Authorization: Bearer {your_token}
-```
 
----
 
 ## Base URL
 
@@ -305,6 +303,199 @@ Returns a JSON response with PDF download URL.
 
 ---
 
+### 7. جلب جميع البيانات الطبية / Get All Medical Data
+
+**GET** `/patient/medical-data`
+
+Endpoint لجلب جميع البيانات الطبية للمريض بشكل منظم (الأمراض، الأدوية، العادات، المرفقات).
+
+Endpoint to get all patient medical data in an organized format (diseases, medications, habits, attachments).
+
+#### Response (200 OK)
+
+```json
+{
+  "success": true,
+  "data": {
+    "diseases": [
+      {
+        "id": 1,
+        "patient_id": 1,
+        "disease_name": "Diabetes",
+        "status": "active",
+        "source": "patient",
+        "created_at": "2024-01-01T10:00:00.000000Z",
+        "updated_at": "2024-01-01T10:00:00.000000Z"
+      },
+      {
+        "id": 2,
+        "patient_id": 1,
+        "disease_name": "Hypertension",
+        "status": "chronic",
+        "source": "doctor",
+        "created_at": "2024-01-02T10:00:00.000000Z",
+        "updated_at": "2024-01-02T10:00:00.000000Z"
+      }
+    ],
+    "medications": [
+      {
+        "id": 1,
+        "medication_name": "Aspirin",
+        "dose": "100mg",
+        "frequency": "Once daily",
+        "duration": "7 days",
+        "is_active": true,
+        "source": "patient",
+        "start_date": "2024-01-01",
+        "end_date": "2024-01-08",
+        "doctor_notes": null,
+        "patient_notes": "Take with food",
+        "doctor": {
+          "id": 3,
+          "name": "Dr. Ahmed Ali"
+        },
+        "visit_id": null,
+        "created_at": "2024-01-01T10:00:00.000000Z",
+        "updated_at": "2024-01-01T10:00:00.000000Z"
+      }
+    ],
+    "habits": {
+      "id": 1,
+      "patient_id": 1,
+      "smoking": "No",
+      "caffeine": "2 cups per day",
+      "exercise": "3 times per week",
+      "sleep_hours": 8,
+      "notes": "Regular exercise routine",
+      "created_at": "2024-01-01T10:00:00.000000Z",
+      "updated_at": "2024-01-01T10:00:00.000000Z"
+    },
+    "attachments": [
+      {
+        "id": 1,
+        "type": "xray",
+        "file_url": "http://your-domain.com/storage/patient_attachments/...",
+        "description": "Chest X-ray",
+        "source": "patient",
+        "created_at": "2024-01-01T10:00:00.000000Z",
+        "updated_at": "2024-01-01T10:00:00.000000Z"
+      }
+    ]
+  }
+}
+```
+
+#### Fields
+
+**Diseases:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | integer | معرف المرض |
+| `disease_name` | string | اسم المرض |
+| `status` | string | الحالة: `active`, `chronic`, `resolved` |
+| `source` | string | المصدر: `doctor`, `patient`, `external` |
+
+**Medications:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | integer | معرف الدواء |
+| `medication_name` | string | اسم الدواء |
+| `is_active` | boolean | هل الدواء نشط أم متوقف |
+| `doctor` | object\|null | معلومات الطبيب (إن وجد) |
+| `visit_id` | integer\|null | معرف الزيارة (إن وجد) |
+
+---
+
+### 8. تعيين المرض كمحلول / Mark Disease as Resolved
+
+**PUT** `/patient/diseases/{id}/resolve`
+
+Endpoint لتعيين حالة المرض إلى `resolved`.
+
+Endpoint to mark a disease status as `resolved`.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | معرف المرض |
+
+#### Response (200 OK)
+
+```json
+{
+  "success": true,
+  "message": "Disease marked as resolved successfully",
+  "disease": {
+    "id": 1,
+    "patient_id": 1,
+    "disease_name": "Diabetes",
+    "status": "resolved",
+    "source": "patient",
+    "created_at": "2024-01-01T10:00:00.000000Z",
+    "updated_at": "2024-01-01T10:00:00.000000Z"
+  }
+}
+```
+
+#### Error Responses
+
+**404 Not Found** - Disease not found:
+```json
+{
+  "success": false,
+  "message": "Disease not found or you do not have access to this disease"
+}
+```
+
+---
+
+### 9. إيقاف الدواء / Stop Medication
+
+**PUT** `/patient/medications/{id}/stop`
+
+Endpoint لإيقاف الدواء (تعيين `is_active` إلى `false`).
+
+Endpoint to stop a medication (set `is_active` to `false`).
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | معرف الدواء |
+
+#### Response (200 OK)
+
+```json
+{
+  "success": true,
+  "message": "Medication stopped successfully",
+  "medication": {
+    "id": 1,
+    "patient_id": 1,
+    "medication_name": "Aspirin",
+    "dose": "100mg",
+    "frequency": "Once daily",
+    "is_active": false,
+    "source": "patient",
+    "created_at": "2024-01-01T10:00:00.000000Z",
+    "updated_at": "2024-01-01T10:00:00.000000Z"
+  }
+}
+```
+
+#### Error Responses
+
+**404 Not Found** - Medication not found:
+```json
+{
+  "success": false,
+  "message": "Medication not found or you do not have access to this medication"
+}
+```
+
+---
+
 ## Appointment Booking Restriction
 
 ### حجز موعد / Book Appointment
@@ -361,21 +552,6 @@ User **cannot** book if they have an active appointment (scheduled or completed)
 
 ---
 
-## Examples
-
-### cURL Examples
-
-#### Register Medication
-```bash
-curl -X POST http://your-domain.com/api/patient/medications \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "medication_name": "Aspirin",
-    "dose": "100mg",
-    "frequency": "Once daily"
-  }'
-```
 
 #### Submit Survey
 ```bash
@@ -399,51 +575,26 @@ curl -X GET http://your-domain.com/api/patient/visits/11/report \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
-Response will return JSON with PDF URL:
-```json
-{
-  "success": true,
-  "pdf_url": "http://your-domain.com/storage/pdf_reports/visit_reports/..."
-}
+
+#### Get All Medical Data
+```bash
+curl -X GET http://your-domain.com/api/patient/medical-data \
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
-Then download the PDF:
+#### Mark Disease as Resolved
 ```bash
-curl -X GET "http://your-domain.com/storage/pdf_reports/visit_reports/Visit_Report_11_..." \
-  --output visit_report.pdf
+curl -X PUT http://your-domain.com/api/patient/diseases/1/resolve \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+#### Stop Medication
+```bash
+curl -X PUT http://your-domain.com/api/patient/medications/1/stop \
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ---
 
-## Testing
 
-للتشغيل الاختبارات:
-To run tests:
-
-```bash
-php artisan test --filter PatientApiTest
-```
-
-أو لتشغيل جميع الاختبارات:
-Or to run all tests:
-
-```bash
-php artisan test
-```
-
----
-
-## Notes
-
-1. جميع التواريخ بصيغة `Y-m-d` (YYYY-MM-DD)
-2. جميع الملفات يجب أن تكون أقل من 10MB
-3. أنواع الملفات المدعومة: jpeg, jpg, png, pdf
-4. حالة الأمراض: `active`, `chronic`, `resolved`
-
----
-
-## Support
-
-للمساعدة والدعم، يرجى التواصل مع فريق التطوير.
-For help and support, please contact the development team.
 

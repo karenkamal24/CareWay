@@ -81,9 +81,16 @@ Route::middleware('auth:sanctum')->group(function (){
 
     // Patient endpoints
     Route::prefix('patient')->group(function () {
+        // Medical Data
+        Route::get('/medical-data', [PatientController::class, 'getAllMedicalData']);
+
         // Medications
         Route::post('/medications', [PatientController::class, 'storeMedication']);
         Route::get('/medications', [PatientController::class, 'getMedications']);
+        Route::put('/medications/{id}/stop', [PatientController::class, 'stopMedication']);
+
+        // Diseases
+        Route::put('/diseases/{id}/resolve', [PatientController::class, 'resolveDisease']);
 
         // Survey/Form
         Route::post('/survey', [PatientController::class, 'submitSurvey']);
