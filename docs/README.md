@@ -14,6 +14,10 @@ Comprehensive guide for testing the API
 Postman Collection جاهزة للاستخدام
 Ready-to-use Postman Collection
 
+### 4. ملف الاختبار / Test File
+`tests/Feature/PatientApiTest.php` - ملف الاختبار الكامل لجميع الـ endpoints
+Complete test file for all endpoints
+
 ---
 
 ## البدء السريع / Quick Start
@@ -42,9 +46,6 @@ php artisan test --filter PatientApiTest
 
 ## الـ Endpoints الرئيسية / Main Endpoints
 
-### Medications
-- `POST /api/patient/medications` - تسجيل دواء
-- `GET /api/patient/medications` - جلب الأدوية
 
 ### Survey
 - `POST /api/patient/survey` - إرسال استبيان

@@ -78,31 +78,3 @@ Content-Type: application/json
     "total_doctors": 1
 }
 ```
-
-### 2. الحصول على قائمة الأعراض الشائعة
-
-**Endpoint:** `GET /api/ai-assistant/common-symptoms`
-
-**Response:**
-```json
-{
-    "success": true,
-    "common_symptoms": [
-        "صداع",
-        "ألم في الصدر",
-        "ضيق في التنفس",
-        ...
-    ]
-}
-```
-
-## بدائل مجانية أخرى
-
-إذا أردت استخدام بدائل أخرى:
-
-1. **Hugging Face Inference API** - مجاني
-2. **Ollama** (محلي) - مجاني تماماً
-3. **Google Gemini API** - مجاني لحد معين
-
-يمكن تعديل `SymptomAnalyzerService.php` لاستخدام أي من هذه البدائل.
-
