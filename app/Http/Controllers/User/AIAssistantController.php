@@ -95,11 +95,14 @@ class AIAssistantController extends Controller
                     ];
                 });
 
+            // الحصول على القسم المقترح (قسم واحد فقط)
+            $suggestedDepartment = $departments->first();
+            
             return response()->json([
                 'success' => true,
                 'message' => 'تم تحليل الأعراض بنجاح',
                 'symptoms' => $symptoms,
-                'suggested_departments' => $departments->pluck('name')->toArray(),
+                'suggested_departments' => $suggestedDepartment ? [$suggestedDepartment->name] : [],
                 'suggested_doctors' => $doctors,
                 'total_doctors' => $doctors->count(),
             ], 200, [], JSON_UNESCAPED_UNICODE);

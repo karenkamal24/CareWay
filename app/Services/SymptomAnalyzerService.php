@@ -24,22 +24,27 @@ class SymptomAnalyzerService
             // استدعاء Groq API
             $aiResponse = $this->callGroqAPI($prompt);
 
-            // تحليل الرد واستخراج الأقسام المناسبة
-            $suggestedDepartments = $this->parseAIResponse($aiResponse, $departments);
-
-            // Fallback في حالة عدم تعرف الذكاء الاصطناعي على القسم
-            if (empty($suggestedDepartments)) {
-                $suggestedDepartments = $this->fallbackKeywordMatching($symptoms, $departments);
+            // استخدام fallback أولاً (أكثر دقة للأعراض الواضحة) - قسم واحد فقط
+            $suggestedDepartment = $this->fallbackKeywordMatching($symptoms, $departments);
+            
+            // إذا fallback لم يعطي نتيجة، نستخدم AI
+            if (empty($suggestedDepartment)) {
+                $suggestedDepartment = $this->parseAIResponse($aiResponse, $departments);
+            }
+            
+            // إذا لم نجد أي قسم، نستخدم الباطنة العامة كحل افتراضي
+            if (empty($suggestedDepartment)) {
+                $suggestedDepartment = 'الباطنة العامة';
             }
 
-            // جلب الأطباء حسب الأقسام مع أقرب موعد متاح
-            $suggestedDoctors = $this->getDoctorsByDepartments($suggestedDepartments);
+            // جلب الأطباء حسب القسم مع أقرب موعد متاح
+            $suggestedDoctors = $this->getDoctorsByDepartments([$suggestedDepartment]);
 
             return [
                 'success' => true,
                 'message' => 'تم تحليل الأعراض بنجاح',
                 'symptoms' => $symptoms,
-                'suggested_departments' => $suggestedDepartments,
+                'suggested_departments' => [$suggestedDepartment],
                 'suggested_doctors' => $suggestedDoctors,
                 'total_doctors' => count($suggestedDoctors)
             ];
@@ -65,15 +70,16 @@ class SymptomAnalyzerService
 الأقسام الطبية المتاحة:
 {$departmentsList}
 
-قم بتحليل الأعراض واقترح اسم القسم الطبي المناسب فقط.
-ملاحظات مهمة:
-- ألم في الرجل أو القدم أو اليد أو الذراع أو الركبة أو الكتف أو الظهر → جراحة العظام
-- ألم في العظام أو المفاصل أو الكسور → جراحة العظام
-- ألم في الصدر أو القلب أو ضغط → أمراض القلب والشرايين
-- صداع أو دوخة أو تنميل → الأمراض العصبية
-- سعال أو كحة أو ضيق تنفس → أمراض الصدر
+قم بتحليل الأعراض واقترح اسم القسم الطبي المناسب الوحيد فقط (قسم واحد فقط).
 
-أجب بقائمة أقسام مفصولة بفواصل بدون شرح.";
+قواعد مهمة للتصنيف:
+- كحة، سعال، رشح، زكام، نزلة برد، ضيق تنفس، كتمة، ربو → أمراض الصدر
+- ألم في الرجل، قدم، يد، ذراع، ركبة، كتف، ظهر، عظام، مفاصل، كسر → جراحة العظام
+- ألم في الصدر، قلب، ضغط، خفقان → أمراض القلب والشرايين
+- صداع، دوخة، تنميل، شلل → الأمراض العصبية
+- ألم في البطن، غثيان، قيء، إسهال → أمراض الجهاز الهضمي أو الباطنة العامة
+
+أجب باسم القسم الوحيد فقط بدون شرح أو فواصل.";
     }
 
     /**
@@ -113,46 +119,47 @@ class SymptomAnalyzerService
     }
 
     /**
-     * استخراج الأقسام من رد الذكاء الاصطناعي
+     * استخراج القسم من رد الذكاء الاصطناعي (قسم واحد فقط)
      */
-    private function parseAIResponse(string $aiResponse, array $availableDepartments): array
+    private function parseAIResponse(string $aiResponse, array $availableDepartments): string
     {
-        if (empty($aiResponse)) return [];
+        if (empty($aiResponse)) return '';
 
-        $suggested = [];
+        // البحث عن أول قسم يطابق في رد AI
         foreach ($availableDepartments as $dept) {
             if (stripos($aiResponse, $dept) !== false) {
-                $suggested[] = $dept;
+                return $dept;
             }
         }
-        return array_unique($suggested);
+        return '';
     }
 
     /**
-     * Fallback في حالة عدم توفر AI
+     * Fallback في حالة عدم توفر AI - يرجع قسم واحد فقط (الأكثر ملاءمة)
      */
-    private function fallbackKeywordMatching(string $symptoms, array $departments): array
+    private function fallbackKeywordMatching(string $symptoms, array $departments): string
     {
         $symptomsLower = mb_strtolower($symptoms, 'UTF-8');
-        $suggested = [];
 
+        // ترتيب الأقسام حسب الأولوية (الأكثر تحديداً أولاً)
         $keywords = [
+            'أمراض الصدر' => ['كحة', 'كحه', 'كح', 'سعال', 'رشح', 'زكام', 'نزلة برد', 'نزلة', 'برد', 'أنف', 'احتقان', 'عطس', 'بلغم', 'صوت أجش', 'تنفس', 'ربو', 'كتمة'],
+            'جراحة العظام' => ['رجل', 'قدم', 'عظام', 'مفصل', 'كسر', 'كاحل', 'ركبة', 'فخذ', 'يد', 'ذراع', 'ظهر', 'عمود فقري', 'الم في العظام', 'الم في المفاصل', 'الم في الرجل', 'الم في القدم', 'الم في الركبة', 'الم في الكتف', 'الم في الظهر', 'الم في اليد', 'الم في الذراع', 'الم في الكاحل', 'الم في الفخذ', 'الم في العضلات', 'التواء', 'خلع', 'كسور', 'مفاصل'],
             'أمراض القلب والشرايين' => ['قلب', 'صدر', 'ضغط', 'خفقان', 'ضيق تنفس'],
             'الأمراض العصبية' => ['صداع', 'دوخة', 'شلل', 'تنميل', 'مخ'],
-            'أمراض الصدر' => ['تنفس', 'سعال', 'كحة', 'ربو', 'كتمة'],
-            'جراحة العظام' => ['رجل', 'قدم', 'عظام', 'مفصل', 'كسر', 'كاحل', 'ركبة', 'فخذ', 'يد', 'ذراع', 'ظهر', 'عمود فقري', 'الم في العظام', 'الم في المفاصل', 'الم في الرجل', 'الم في القدم', 'الم في الركبة', 'الم في الكتف', 'الم في الظهر', 'الم في اليد', 'الم في الذراع', 'الم في الكاحل', 'الم في الفخذ', 'الم في العضلات', 'التواء', 'خلع', 'كسور', 'مفاصل', 'عظام'],
             'الباطنة العامة' => ['فحص', 'تعب', 'عام'],
         ];
 
+        // البحث عن أول قسم يطابق (الأكثر تحديداً)
         foreach ($keywords as $dept => $words) {
             foreach ($words as $word) {
                 if (stripos($symptomsLower, $word) !== false) {
-                    $suggested[] = $dept;
+                    return $dept; // إرجاع أول قسم يطابق
                 }
             }
         }
 
-        return !empty($suggested) ? array_unique($suggested) : ['الباطنة العامة'];
+        return ''; // لا قسم مطابق
     }
 
     /**
