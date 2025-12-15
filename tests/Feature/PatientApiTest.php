@@ -458,9 +458,9 @@ class PatientApiTest extends TestCase
     }
 
     /**
-     * Test appointment booking restriction
+     * Test that user can book multiple appointments
      */
-    public function test_cannot_book_appointment_if_exists()
+    public function test_can_book_appointment_even_if_exists()
     {
         // Create an existing appointment
         $availableDoctor = AvailableDoctor::create([
@@ -493,9 +493,10 @@ class PatientApiTest extends TestCase
             'available_doctor_id' => $availableDoctor->id,
         ]);
 
-        $response->assertStatus(400)
+        $response->assertStatus(200)
             ->assertJson([
-                'error' => 'You already have an active appointment. Please complete or cancel your current appointment before booking a new one.',
+                'success' => true,
+                'message' => 'Appointment successfully booked! Please pay at the clinic.',
             ]);
     }
 }
