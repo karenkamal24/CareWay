@@ -26,15 +26,31 @@ class SymptomAnalyzerService
 
             // استخدام fallback أولاً (أكثر دقة للأعراض الواضحة) - قسم واحد فقط
             $suggestedDepartment = $this->fallbackKeywordMatching($symptoms, $departments);
-            
+
+            // Log للتحقق
+            if (!empty($suggestedDepartment)) {
+                Log::info('Fallback matched department', [
+                    'symptoms' => $symptoms,
+                    'department' => $suggestedDepartment
+                ]);
+            }
+
             // إذا fallback لم يعطي نتيجة، نستخدم AI
             if (empty($suggestedDepartment)) {
                 $suggestedDepartment = $this->parseAIResponse($aiResponse, $departments);
+                if (!empty($suggestedDepartment)) {
+                    Log::info('AI matched department', [
+                        'symptoms' => $symptoms,
+                        'department' => $suggestedDepartment,
+                        'ai_response' => $aiResponse
+                    ]);
+                }
             }
-            
+
             // إذا لم نجد أي قسم، نستخدم الباطنة العامة كحل افتراضي
             if (empty($suggestedDepartment)) {
                 $suggestedDepartment = 'الباطنة العامة';
+                Log::info('Using default department', ['symptoms' => $symptoms]);
             }
 
             // جلب الأطباء حسب القسم مع أقرب موعد متاح
@@ -139,26 +155,39 @@ class SymptomAnalyzerService
      */
     private function fallbackKeywordMatching(string $symptoms, array $departments): string
     {
-        $symptomsLower = mb_strtolower($symptoms, 'UTF-8');
+        // تنظيف النص وإزالة المسافات الزائدة
+        $symptomsClean = trim($symptoms);
+        $symptomsLower = mb_strtolower($symptomsClean, 'UTF-8');
 
         // ترتيب الأقسام حسب الأولوية (الأكثر تحديداً أولاً)
+        // يجب أن تكون الأقسام المحددة جداً في البداية
         $keywords = [
+            'الأمراض العصبية' => ['صداع', 'دوخة', 'شلل', 'تنميل', 'مخ', 'نوبة', 'صرع', 'رعشة'],
             'أمراض الصدر' => ['كحة', 'كحه', 'كح', 'سعال', 'رشح', 'زكام', 'نزلة برد', 'نزلة', 'برد', 'أنف', 'احتقان', 'عطس', 'بلغم', 'صوت أجش', 'تنفس', 'ربو', 'كتمة'],
             'جراحة العظام' => ['رجل', 'قدم', 'عظام', 'مفصل', 'كسر', 'كاحل', 'ركبة', 'فخذ', 'يد', 'ذراع', 'ظهر', 'عمود فقري', 'الم في العظام', 'الم في المفاصل', 'الم في الرجل', 'الم في القدم', 'الم في الركبة', 'الم في الكتف', 'الم في الظهر', 'الم في اليد', 'الم في الذراع', 'الم في الكاحل', 'الم في الفخذ', 'الم في العضلات', 'التواء', 'خلع', 'كسور', 'مفاصل'],
             'أمراض القلب والشرايين' => ['قلب', 'صدر', 'ضغط', 'خفقان', 'ضيق تنفس'],
-            'الأمراض العصبية' => ['صداع', 'دوخة', 'شلل', 'تنميل', 'مخ'],
             'الباطنة العامة' => ['فحص', 'تعب', 'عام'],
         ];
 
         // البحث عن أول قسم يطابق (الأكثر تحديداً)
         foreach ($keywords as $dept => $words) {
             foreach ($words as $word) {
-                if (stripos($symptomsLower, $word) !== false) {
+                $wordLower = mb_strtolower(trim($word), 'UTF-8');
+                // البحث في النص - استخدام mb_stripos للعربية
+                if (mb_stripos($symptomsLower, $wordLower, 0, 'UTF-8') !== false) {
+                    Log::info('Fallback keyword matched', [
+                        'symptoms' => $symptoms,
+                        'symptoms_lower' => $symptomsLower,
+                        'keyword' => $word,
+                        'keyword_lower' => $wordLower,
+                        'department' => $dept
+                    ]);
                     return $dept; // إرجاع أول قسم يطابق
                 }
             }
         }
 
+        Log::info('Fallback no match found', ['symptoms' => $symptoms]);
         return ''; // لا قسم مطابق
     }
 

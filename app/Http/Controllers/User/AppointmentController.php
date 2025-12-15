@@ -33,9 +33,9 @@ public function storeAppointment(Request $request)
             'available_doctor_id' => 'required|exists:available_doctors,id'
         ]);
 
-        // Check if user has an existing active appointment
+        // Check if user has an existing active appointment (only scheduled, not completed or canceled)
         $existingAppointment = Appointment::where('user_id', $user->id)
-            ->whereIn('status', ['scheduled', 'completed'])
+            ->where('status', 'scheduled')
             ->where('payment_status', '!=', 'failed')
             ->first();
 
